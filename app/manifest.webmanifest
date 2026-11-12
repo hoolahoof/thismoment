@@ -1,0 +1,16 @@
+{
+  "name": "ThisMoment",
+  "short_name": "ThisMoment",
+  "description": "폰과 PC에서 같이 쓰는 캘린더 · 타임블록 · 디데이",
+  "lang": "ko",
+  "start_url": "./#/calendar",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F6F3",
+  "theme_color": "#F6F6F3",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
