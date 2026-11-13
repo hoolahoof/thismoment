@@ -5,6 +5,7 @@ import { holidayOn } from './holidays.js';
 import { esc, toISODate, parseDate, todayLocal, icons } from './util.js';
 import { eventsOn, eventTime, localISO } from './recur.js';
 import { colorOf, REPEAT_ICON } from './colors.js';
+import { emojiTag } from './emoji.js';
 import { getSelected, setSelected, eventDialogHTML, setupEventDialog } from './calendar.js';
 import { findOccurrence, moveEvent } from './events.js';
 import { spanIn, layout, minutesOf } from './timeline.js';
@@ -286,7 +287,7 @@ export const day = {
     const evs = eventsOn(iso, s.data.events);
     el.querySelector('[data-slot=allday]').innerHTML = evs
       .filter((ev) => ev.all_day)
-      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg};border-left-color:${colorOf(ev.color).bar}">${ev.is_holiday ? '휴일' : '하루 종일'} · ${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</button>`)
+      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg};border-left-color:${colorOf(ev.color).bar}"><span class="allday-t">${ev.is_holiday ? '휴일' : '하루 종일'} · ${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${emojiTag(ev, 'emo-lg')}</button>`)
       .join('');
 
     // 시간 블록
@@ -303,6 +304,7 @@ export const day = {
         <button class="block" data-event="${it.ev.id}" data-occ="${it.ev._occ}" ${single ? 'data-single="1"' : ''}
           style="top:${top}px;height:${height}px;left:calc(${it.col * w}% + 2px);width:calc(${w}% - 4px);background:${c.bg};border-left-color:${c.bar}">
           <span class="block-title">${esc(it.ev.title)}${it.ev.recurrence ? REPEAT_ICON : ''}</span>
+          ${emojiTag(it.ev, 'emo-block')}
           ${height >= 38 ? `<span class="block-time">${eventTime(it.ev)}</span>` : ''}
           ${single ? `<span class="block-grip${height < 40 ? ' small' : ''}" aria-hidden="true"></span>` : ''}
         </button>`;

@@ -3,7 +3,8 @@ import * as store from './store.js';
 import { holidayOn } from './holidays.js';
 import { esc, toISODate, parseDate, todayLocal, ddayLabel, daysUntil, icons } from './util.js';
 import { localISO, eventsOn, parseRule, sameRule, describeRule, hm, eventTime, daysBetween, addDays } from './recur.js';
-import { COLORS, colorOf, REPEAT_ICON } from './colors.js';
+import { COLORS, colorOf, isCustomColor, REPEAT_ICON } from './colors.js';
+import { pickEmoji, emojiTag } from './emoji.js';
 import { weekView, weekTitle } from './week.js';
 import { setupSearch, searchDialogHTML, searchIcon } from './search.js';
 import { applyEdit, createEvent, deleteEvent, askScope, scopeOptions, findOccurrence, moveEvent } from './events.js';
@@ -202,7 +203,7 @@ export const calendar = {
       range.x = e.clientX; range.y = e.clientY; range.type = e.pointerType;
       const chip = e.target.closest('.chip-ev');
       range.chip = chip
-        ? { id: chip.dataset.event, occ: chip.dataset.occ, title: chip.textContent, bg: chip.style.background }
+        ? { id: chip.dataset.event, occ: chip.dataset.occ, title: chip.querySelector('.chip-t')?.textContent ?? chip.textContent, bg: chip.style.background }
         : null;
       clearTimeout(range.timer);
       if (e.pointerType !== 'mouse') range.timer = setTimeout(begin, 350);
@@ -261,7 +262,22 @@ export const calendar = {
     grid.addEventListener('pointercancel', reset);
     grid.addEventListener('contextmenu', (e) => { if (range.start) e.preventDefault(); });
 
-    el.querySelector('[data-slot=day-list]').addEventListener('click', (e) => {
+    el.querySelector('[data-slot=day-list]').addEventListener('click', async (e) => {
+      // 오른쪽 이모티콘을 누르면 바로 바꾼다 (반복 일정이면 모든 날에 적용)
+      const em = e.target.closest('[data-emoji-edit]');
+      if (em) {
+        e.stopPropagation();
+        const m = store.getState().data.events.find((x) => x.id === em.dataset.emojiEdit);
+        if (!m) return;
+        const r = await pickEmoji(m.emoji ?? '');
+        if (r === undefined || r === (m.emoji ?? '')) return;
+        try {
+          await store.update('events', m.id, { emoji: r || null });
+        } catch (err) {
+          alert('저장하지 못했어요: ' + err.message + ' (이모티콘을 처음 쓸 때는 SQL 010 실행이 필요해요)');
+        }
+        return;
+      }
       const b = e.target.closest('[data-event]');
       if (!b) return;
       const ev = findOccurrence(b.dataset.event, b.dataset.occ);
@@ -310,7 +326,7 @@ export const calendar = {
       ].join(' ');
       const maxChips = hol ? 1 : 2;
       const chips = evs.slice(0, maxChips)
-        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">${esc(ev.title)}</span>`)
+        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}"><span class="chip-t">${esc(ev.title)}</span>${emojiTag(ev)}</span>`)
         .join('');
       const more = evs.length > maxChips ? `<span class="chip-more">+${evs.length - maxChips}</span>` : '';
       const label = `${d.getMonth() + 1}월 ${d.getDate()}일${hol ? `, ${hol}` : ''}${evs.length ? `, 일정 ${evs.length}개` : ''}`;
@@ -338,6 +354,7 @@ export const calendar = {
                 <span class="ev-time">${eventTime(ev)}</span>
                 <span class="ev-title"><span>${esc(ev.title)}${ev.is_holiday ? '<span class="hol-badge">휴일</span>' : ''}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
               </span>
+              <span class="emo-btn ${ev.emoji ? '' : 'empty'}" role="button" tabindex="0" data-emoji-edit="${ev.id}" aria-label="이모티콘 ${ev.emoji ? '바꾸기' : '붙이기'}">${ev.emoji ? esc(ev.emoji) : '＋'}</span>
             </button>
           </li>`).join('')
       : '<li class="empty muted">일정이 없어요. 오른쪽 아래 + 로 추가하세요.</li>';
@@ -350,7 +367,11 @@ export function eventDialogHTML() {
   <dialog class="sheet" data-slot="ev-dialog" aria-labelledby="ev-dialog-title">
     <form method="dialog" class="form" novalidate>
       <h2 id="ev-dialog-title" data-slot="ev-dialog-title">일정 추가</h2>
-      <label>제목<input name="title" maxlength="60" required placeholder="예: 팀 회의" autocomplete="off"></label>
+      <div class="title-row">
+        <label class="grow">제목<input name="title" maxlength="60" required placeholder="예: 팀 회의" autocomplete="off"></label>
+        <button type="button" class="emoji-btn" data-action="emoji" aria-label="이모티콘 고르기"><span data-slot="emo-view">☺</span></button>
+        <input type="hidden" name="emoji">
+      </div>
       <div class="check-row">
         <label class="check"><input type="checkbox" name="all_day"> 하루 종일</label>
         <button type="button" class="holiday-toggle" data-action="holiday" aria-pressed="false">휴일</button>
@@ -393,6 +414,10 @@ export function eventDialogHTML() {
             </label>`).join('')}
         </div>
       </fieldset>
+      <fieldset class="days" data-when="mycolor">
+        <legend>내 색 <span class="muted small">(직접 만들거나 전에 쓴 색)</span></legend>
+        <div class="swatches" data-slot="custom-swatches"></div>
+      </fieldset>
       <label>메모<input name="note" maxlength="200" autocomplete="off"></label>
       <p class="form-msg" role="status"></p>
       <div class="sheet-actions">
@@ -402,6 +427,31 @@ export function eventDialogHTML() {
         <button class="btn primary" type="submit" value="save">저장</button>
       </div>
     </form>
+  </dialog>
+  <dialog class="sheet" data-slot="color-dialog" aria-label="색 만들기">
+    <div class="form">
+      <h2>내 색 만들기</h2>
+      <div class="cp-top">
+        <div class="cp-preview" data-slot="cp-preview"></div>
+        <label class="grow">색 코드<input data-slot="cp-hex" maxlength="7" autocomplete="off" spellcheck="false" placeholder="#RRGGBB"></label>
+        <input type="color" class="cp-native" data-slot="cp-native" aria-label="색 고르기">
+      </div>
+      <div class="cp-sliders">
+        <label>R<input type="range" min="0" max="255" data-ch="0"><output></output></label>
+        <label>G<input type="range" min="0" max="255" data-ch="1"><output></output></label>
+        <label>B<input type="range" min="0" max="255" data-ch="2"><output></output></label>
+      </div>
+      <fieldset class="days">
+        <legend>전에 쓴 색</legend>
+        <div class="swatches" data-slot="cp-used"></div>
+        <p class="muted small" data-slot="cp-empty">아직 직접 만든 색이 없어요.</p>
+      </fieldset>
+      <div class="sheet-actions">
+        <span class="grow"></span>
+        <button class="btn" type="button" data-act="cancel">취소</button>
+        <button class="btn primary" type="button" data-act="apply">이 색 쓰기</button>
+      </div>
+    </div>
   </dialog>`;
 }
 
@@ -414,6 +464,98 @@ export function setupEventDialog(root) {
   const msg = form.querySelector('.form-msg');
   const chips = () => [...form.querySelectorAll('[data-rday]')];
   let editing = null;
+
+  // ── 이모티콘 ──
+  const emoView = form.querySelector('[data-slot=emo-view]');
+  const paintEmo = () => {
+    const v = f.namedItem('emoji').value;
+    emoView.textContent = v || '☺';
+    emoView.parentElement.classList.toggle('has', !!v);
+  };
+  form.querySelector('[data-action=emoji]').addEventListener('click', async () => {
+    const r = await pickEmoji(f.namedItem('emoji').value);
+    if (r !== undefined) {
+      f.namedItem('emoji').value = r;
+      paintEmo();
+    }
+  });
+
+  // ── 내 색 (직접 만든 색 + 전에 쓴 색) ──
+  const cdlg = root.querySelector('[data-slot=color-dialog]');
+  const customBox = form.querySelector('[data-slot=custom-swatches]');
+  const usedColors = () => {
+    const n = new Map();
+    for (const e of store.getState().data.events) {
+      if (isCustomColor(e.color)) n.set(e.color.toLowerCase(), (n.get(e.color.toLowerCase()) || 0) + 1);
+    }
+    return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  };
+  const swatchHTML = (hex, checked) =>
+    `<label class="swatch" style="--sw:${hex}"><input type="radio" name="color" value="${hex}" aria-label="${hex}" ${checked ? 'checked' : ''}><span></span></label>`;
+  function renderCustom(selected) {
+    const list = usedColors().slice(0, 13);
+    const sel = isCustomColor(selected) ? selected.toLowerCase() : null;
+    if (sel && !list.includes(sel)) list.unshift(sel);
+    customBox.innerHTML =
+      list.map((h) => swatchHTML(h, h === sel)).join('') +
+      '<button type="button" class="swatch-add" data-action="add-color" aria-label="내 색 만들기">＋</button>';
+  }
+
+  // RGB 고르는 창: 글자 색 코드, 슬라이더, 기기 색 선택기, 전에 쓴 색
+  function pickColor(initial) {
+    return new Promise((resolve) => {
+      const hexIn = cdlg.querySelector('[data-slot=cp-hex]');
+      const nat = cdlg.querySelector('[data-slot=cp-native]');
+      const prev = cdlg.querySelector('[data-slot=cp-preview]');
+      const sl = [...cdlg.querySelectorAll('[data-ch]')];
+      const usedBox = cdlg.querySelector('[data-slot=cp-used]');
+      const ok = (h) => (/^#[0-9a-f]{6}$/i.test(h) ? h.toLowerCase() : null);
+      let cur = ok(initial) ?? '#ff7aa8';
+      const set = (h, from) => {
+        h = ok(h);
+        if (!h) return;
+        cur = h;
+        prev.style.background = h;
+        if (from !== 'hex') hexIn.value = h;
+        nat.value = h;
+        const v = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+        sl.forEach((r, i) => {
+          if (from !== 'slider') r.value = v[i];
+          r.nextElementSibling.textContent = v[i];
+        });
+      };
+      const used = usedColors();
+      usedBox.innerHTML = used.map((h) => `<button type="button" class="swatch-pick" style="--sw:${h}" data-hex="${h}" aria-label="${h}"></button>`).join('');
+      cdlg.querySelector('[data-slot=cp-empty]').hidden = used.length > 0;
+      set(cur);
+
+      const ac = new AbortController();
+      const o = { signal: ac.signal };
+      const finish = (v) => {
+        ac.abort();
+        if (cdlg.open) cdlg.close();
+        resolve(v);
+      };
+      hexIn.addEventListener('input', () => set(hexIn.value.startsWith('#') ? hexIn.value : '#' + hexIn.value, 'hex'), o);
+      nat.addEventListener('input', () => set(nat.value), o);
+      sl.forEach((r) => r.addEventListener('input', () => set('#' + sl.map((x) => Number(x.value).toString(16).padStart(2, '0')).join(''), 'slider'), o));
+      cdlg.addEventListener('click', (e) => {
+        if (e.target === cdlg) return finish(null);
+        const p = e.target.closest('[data-hex]');
+        if (p) return set(p.dataset.hex);
+        const a = e.target.closest('[data-act]');
+        if (a) finish(a.dataset.act === 'apply' ? cur : null);
+      }, o);
+      cdlg.addEventListener('close', () => finish(null), o);
+      cdlg.showModal();
+    });
+  }
+  form.addEventListener('click', async (e) => {
+    if (!e.target.closest('[data-action=add-color]')) return;
+    const now = form.querySelector('input[name=color]:checked')?.value;
+    const h = await pickColor(isCustomColor(now) ? now : '#ff7aa8');
+    if (h) renderCustom(h);
+  });
 
   const holBtn = form.querySelector('[data-action=holiday]');
   const isHoliday = () => holBtn.getAttribute('aria-pressed') === 'true';
@@ -434,6 +576,7 @@ export function setupEventDialog(root) {
     f.namedItem('all_day').disabled = on;
     form.querySelector('[data-when=holiday-hint]').hidden = !on;
     form.querySelector('[data-when=color]').hidden = on;
+    form.querySelector('[data-when=mycolor]').hidden = on;
     for (const o of f.namedItem('repeat').options) o.disabled = on && ['DAILY', 'WEEKLY', 'MONTHLY'].includes(o.value);
     if (on && ['DAILY', 'WEEKLY', 'MONTHLY'].includes(f.namedItem('repeat').value)) f.namedItem('repeat').value = '';
     f.namedItem('title').placeholder = on ? '예: 여름휴가, 창립기념일' : '예: 팀 회의';
@@ -509,7 +652,10 @@ export function setupEventDialog(root) {
     f.namedItem('until').value = rule?.until ?? '';
     chips().forEach((c) => c.setAttribute('aria-pressed', String(!!rule?.days.includes(Number(c.dataset.rday)))));
     const color = ev?.color ?? 'blue';
-    form.querySelectorAll('input[name=color]').forEach((r) => (r.checked = r.value === color));
+    renderCustom(color);
+    form.querySelectorAll('input[name=color]').forEach((r) => (r.checked = r.value.toLowerCase() === color.toLowerCase()));
+    f.namedItem('emoji').value = ev?.emoji ?? '';
+    paintEmo();
     f.namedItem('note').value = ev?.note ?? '';
     syncAllDay();
     syncHoliday();
@@ -551,6 +697,7 @@ export function setupEventDialog(root) {
       all_day: allDay,
       color: holiday ? 'red' : form.querySelector('input[name=color]:checked')?.value ?? 'blue',
       note: f.namedItem('note').value.trim() || null,
+      emoji: f.namedItem('emoji').value || null,
       is_holiday: holiday,
     };
     try {

@@ -15,7 +15,14 @@ export const COLORS = {
   brown: { name: '갈색', bg: 'var(--c-brown-bg)', bar: 'var(--c-brown-bar)' },
   gray: { name: '회색', bg: 'var(--c-gray-bg)', bar: 'var(--c-gray-bar)' },
 };
-export const colorOf = (c) => COLORS[c] ?? COLORS.blue;
+// 직접 고른 색은 '#RRGGBB' 글자로 저장한다. 배경은 그 색을 표면색에 섞어 만들어서 다크 모드에서도 자연스럽다.
+const HEX = /^#[0-9a-f]{6}$/i;
+export const isCustomColor = (c) => HEX.test(c ?? '');
+export const colorOf = (c) =>
+  COLORS[c] ??
+  (isCustomColor(c)
+    ? { name: c.toUpperCase(), bg: `color-mix(in srgb, ${c} var(--tint-mix, 22%), var(--color-surface))`, bar: c }
+    : COLORS.blue);
 
 export const REPEAT_ICON =
   '<svg class="rep-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="반복"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg>';

@@ -1,6 +1,6 @@
 // 앱 화면 파일을 저장해 두고(오프라인에서도 열림), 새 버전이 있으면 뒤에서 갱신한다.
 // Supabase 데이터 요청은 저장하지 않는다.
-const CACHE = 'thismoment-v43';
+const CACHE = 'thismoment-v44';
 const SHELL = [
   './',
   'index.html',
@@ -8,6 +8,7 @@ const SHELL = [
   'tokens.css',
   'js/theme.js',
   'js/pullrefresh.js',
+  'js/emoji.js',
   'config.js',
   'manifest.webmanifest',
   'js/app.js',

@@ -561,3 +561,48 @@ dialog.sheet.tall { height: 92dvh; }
 
 /* 캘린더 아래 안내: 줄마다 한 줄에 맞춘다 (폭에 따라 글자 크기가 조금 줄어듦) */
 .cal-tip { white-space: nowrap; word-break: keep-all; font-size: clamp(10.5px, 3.1vw, 13px); }
+
+/* ── 직접 고른 색 · 이모티콘 ── */
+:root { --tint-mix: 22%; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --tint-mix: 34%; } }
+:root[data-theme='dark'] { --tint-mix: 34%; }
+
+.swatch-add, .swatch-pick { position: relative; width: 100%; max-width: 44px; aspect-ratio: 1; justify-self: center; border-radius: var(--radius-control); cursor: pointer; padding: 0; }
+.swatch-add { border: 1.5px dashed var(--color-line-strong); background: var(--color-surface); color: var(--color-muted); font-size: 20px; line-height: 1;
+  background-image: conic-gradient(from 0deg, #ff6b6b22, #ffd93d22, #6bcB7722, #4d96ff22, #b66bff22, #ff6b6b22); }
+.swatch-pick { border: 3px solid transparent; background: var(--sw); }
+.swatch-pick:focus-visible, .swatch-add:focus-visible { outline: var(--focus-ring) solid var(--color-accent); outline-offset: 2px; }
+
+.cp-top { display: flex; align-items: flex-end; gap: var(--space-3); }
+.cp-preview { width: 52px; height: 52px; border-radius: var(--radius-control); border: 1px solid var(--color-line-strong); flex: none; }
+.cp-native { width: 52px; height: 46px; padding: 0; border: 1px solid var(--color-line-strong); border-radius: var(--radius-control); background: var(--color-surface); flex: none; }
+.cp-sliders { display: flex; flex-direction: column; gap: var(--space-2); }
+.cp-sliders label { flex-direction: row; align-items: center; gap: var(--space-3); font-weight: var(--font-weight-bold); }
+.cp-sliders input[type='range'] { flex: 1 1 auto; accent-color: var(--color-accent); height: 28px; }
+.cp-sliders output { width: 32px; text-align: right; font-variant-numeric: tabular-nums; color: var(--color-muted); font-size: var(--font-size-sm); }
+
+.title-row { display: flex; align-items: flex-end; gap: var(--space-2); }
+.title-row .grow { flex: 1 1 auto; min-width: 0; }
+.emoji-btn { flex: none; width: 46px; height: 46px; border: 1px dashed var(--color-line-strong); border-radius: var(--radius-control); background: var(--color-surface); font-size: 22px; line-height: 1; cursor: pointer; color: var(--color-muted); }
+.emoji-btn.has { border-style: solid; color: inherit; }
+
+.emoji-sheet .emo-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.emoji-sheet .emo-tabs::-webkit-scrollbar { display: none; }
+.emo-tabs button { flex: none; height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--color-line-strong); background: var(--color-surface); font-size: 14px; font-weight: var(--font-weight-medium); cursor: pointer; }
+.emo-tabs button[aria-selected='true'] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
+.emo-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; min-height: 150px; align-content: start; }
+.emo-cell { height: 50px; border: 0; border-radius: var(--radius-control); background: var(--color-surface-2); font-size: 28px; line-height: 1; cursor: pointer; }
+.emo-cell:active { transform: scale(0.92); }
+.emo-cell.on { box-shadow: inset 0 0 0 2px var(--color-accent); }
+
+/* 일정 오른쪽에 보이는 이모티콘 */
+.emo { flex: none; margin-left: auto; font-size: 11px; line-height: 1; }
+.emo-lg { font-size: 22px; padding-left: var(--space-2); }
+.chip-ev { display: flex; align-items: center; gap: 2px; }
+.chip-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.allday-chip { display: flex; align-items: center; gap: var(--space-2); width: 100%; }
+.allday-t { min-width: 0; flex: 1 1 auto; text-align: left; }
+.block .emo-block { position: absolute; right: 4px; top: 3px; margin: 0; font-size: 16px; }
+.emo-btn { flex: none; margin-left: auto; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 24px; line-height: 1; cursor: pointer; }
+.emo-btn.empty { color: var(--color-line-strong); font-size: 18px; border: 1px dashed var(--color-line-strong); width: 32px; height: 32px; border-radius: 16px; }
+.emo-btn:active { transform: scale(0.9); }

@@ -6,6 +6,7 @@ import { eventsOn, eventTime, addDays } from './recur.js';
 import { colorOf, REPEAT_ICON } from './colors.js';
 import { setSelected } from './calendar.js';
 import { startQuotes } from './quotes.js';
+import { emojiTag } from './emoji.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const pad = (n) => String(n).padStart(2, '0');
@@ -191,6 +192,7 @@ export const home = {
                 <span class="ev-time">${eventTime(ev)}</span>
                 <span class="ev-title"><span>${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
               </span>
+              ${emojiTag(ev, 'emo-lg')}
             </button>
           </li>`;
         }).join('')
