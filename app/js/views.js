@@ -258,7 +258,8 @@ const settings = {
         <div class="copy-row"><span>③ 토큰 <code data-slot="token">…</code></span><button class="btn" data-copy="token" type="button">복사</button></div>
         <a class="btn primary block-link" href="${SHORTCUT_RUN_URL}">지금 시계에 반영 (단축어 실행)</a>
       </section>
-      <button class="btn danger wide" data-action="logout" type="button">로그아웃</button>`;
+      <button class="btn danger wide" data-action="logout" type="button">로그아웃</button>
+      <p class="muted small center credits">홈의 명언은 MIT 라이선스 자료(Hugging Face m-ric/english_historical_quotes, chkim116/kadvice)에서 골라 직접 번역한 것이에요. <a href="https://github.com/hoolahoof/thismoment/blob/main/CREDITS.md" target="_blank" rel="noopener">출처 자세히</a></p>`;
 
     lockSupported().then((ok) => {
       if (!ok) {

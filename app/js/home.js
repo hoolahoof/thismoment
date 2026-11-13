@@ -5,6 +5,7 @@ import { esc, toISODate, parseDate, todayLocal, ddayLabel, daysUntil } from './u
 import { eventsOn, eventTime, addDays } from './recur.js';
 import { colorOf, REPEAT_ICON } from './colors.js';
 import { setSelected } from './calendar.js';
+import { startQuotes } from './quotes.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const pad = (n) => String(n).padStart(2, '0');
@@ -34,6 +35,14 @@ let timer = null;
 export const home = {
   mount(el) {
     el.innerHTML = `
+      <button class="quote" type="button" data-slot="quote" hidden aria-label="오늘의 명언, 누르면 다음 명언">
+        <span class="quote-mark" aria-hidden="true">“</span>
+        <span class="quote-body">
+          <span class="quote-text" data-slot="q-text"></span>
+          <span class="quote-author" data-slot="q-author"></span>
+        </span>
+      </button>
+
       <header class="page-head home-head">
         <div class="home-head-text">
           <span class="muted small">오늘</span>
@@ -72,6 +81,8 @@ export const home = {
         alert('저장하지 못했어요: ' + err.message);
       }
     });
+
+    startQuotes(el.querySelector('[data-slot=quote]'));
 
     // 시간이 지나면 알람·일정의 "지남" 표시가 바뀌도록 1분마다 다시 그린다
     clearInterval(timer);
