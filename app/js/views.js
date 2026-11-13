@@ -11,6 +11,7 @@ import { localISO, lastDayISO, nextOccurrenceISO } from './recur.js';
 import { day } from './day.js';
 import { home } from './home.js';
 import { getTheme, setTheme } from './theme.js';
+import { pickEmoji } from './emoji.js';
 import { pushSupported, isStandalone, pushState, enablePush, disablePush } from './push.js';
 
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
@@ -43,7 +44,11 @@ const dday = {
       </nav>
       <h2 class="section-title">디데이 추가</h2>
       <form class="card form inline-form" data-slot="form">
-        <label>이름<input name="title" required maxlength="40" placeholder="예: 여행 출발"></label>
+        <div class="title-row">
+          <label class="grow">이름<input name="title" required maxlength="40" placeholder="예: 여행 출발"></label>
+          <button type="button" class="emoji-btn" data-action="dd-emoji" aria-label="로고(이모티콘) 고르기"><span data-slot="dd-emo">☺</span></button>
+          <input type="hidden" name="emoji">
+        </div>
         <label>날짜<input name="target_date" type="date" required value="${toISODate(todayLocal())}"></label>
         <button class="btn primary" type="submit">${icons.plus}추가</button>
         <p class="form-msg" role="status"></p>
@@ -58,10 +63,11 @@ const dday = {
       const target = fe.namedItem('target_date').value;
       if (!title || !target) return;
       try {
-        const made = await store.insert('ddays', { title, target_date: target, count_up: false });
+        const emoji = fe.namedItem('emoji').value;
+        const made = await store.insert('ddays', { title, target_date: target, count_up: false, ...(emoji ? { emoji } : {}) });
         // 디데이 날짜에 하루 종일 일정도 같이 만든다 (디데이를 지우면 이 일정도 같이 지워짐)
         const at = new Date(`${target}T00:00`).toISOString();
-        const ev = { title, all_day: true, color: 'purple', starts_at: at, ends_at: at };
+        const ev = { title, all_day: true, color: 'purple', starts_at: at, ends_at: at, ...(emoji ? { emoji } : {}) };
         try {
           await store.insert('events', { ...ev, dday_id: made.id });
         } catch {
@@ -69,12 +75,24 @@ const dday = {
           try { await store.insert('events', ev); } catch { /* 일정은 못 만들어도 디데이는 저장됨 */ }
         }
         fe.namedItem('title').value = '';
+        fe.namedItem('emoji').value = '';
+        f.querySelector('[data-slot=dd-emo]').textContent = '☺';
+        f.querySelector('[data-action=dd-emoji]').classList.remove('has');
         msg.classList.remove('error');
         msg.textContent = '';
       } catch (err) {
         msg.textContent = '저장하지 못했어요: ' + err.message;
         msg.classList.add('error');
       }
+    });
+
+    el.querySelector('[data-action=dd-emoji]').addEventListener('click', async () => {
+      const f = el.querySelector('[data-slot=form]');
+      const r = await pickEmoji(f.elements.namedItem('emoji').value);
+      if (r === undefined) return;
+      f.elements.namedItem('emoji').value = r;
+      f.querySelector('[data-slot=dd-emo]').textContent = r || '☺';
+      f.querySelector('[data-action=dd-emoji]').classList.toggle('has', !!r);
     });
 
     el.querySelector('[data-slot=pager]').addEventListener('click', (e) => {
@@ -91,7 +109,15 @@ const dday = {
       const item = store.getState().data.ddays.find((d) => d.id === id);
       if (!item) return;
       try {
-        if (btn.dataset.action === 'delete') {
+        if (btn.dataset.action === 'emoji') {
+          const r = await pickEmoji(item.emoji ?? '');
+          if (r === undefined || r === (item.emoji ?? '')) return;
+          await store.update('ddays', id, { emoji: r || null });
+          // 같이 만들어진 일정에도 같은 이모티콘을 붙인다
+          for (const ev of store.getState().data.events.filter((x) => x.dday_id === id)) {
+            try { await store.update('events', ev.id, { emoji: r || null }); } catch { /* 일정 쪽은 못 붙여도 됨 */ }
+          }
+        } else if (btn.dataset.action === 'delete') {
           if (confirm(`'${item.title}' 디데이를 지울까요? (같이 만들어진 일정도 지워져요)`)) {
             for (const ev of store.getState().data.events.filter((e) => e.dday_id === id)) await store.remove('events', ev.id);
             await store.remove('ddays', id);
@@ -123,7 +149,7 @@ const dday = {
       const near = !hero.count_up && n >= 0 && n <= 7;
       return `
       <section class="card dday-hero ${near ? 'is-near' : ''}">
-        <div class="dday-hero-top"><span class="dday-hero-title">${esc(hero.title)}</span><span class="dday-card-ic">${ddayIcon(hero.title)}</span></div>
+        <div class="dday-hero-top"><span class="dday-hero-title">${esc(hero.title)}</span><span class="dday-card-ic ${hero.emoji ? 'has-emo' : ''}">${hero.emoji ? esc(hero.emoji) : ddayIcon(hero.title)}</span></div>
         <div class="dday-hero-count">${ddayLabel(hero)}</div>
         <div class="dday-hero-date">${fmtDate(hero.target_date)}</div>
       </section>`;
@@ -146,6 +172,7 @@ const dday = {
           .map(
             (d) => `
         <li class="card row dday-row ${!d.count_up && daysUntil(d.target_date) >= 0 && daysUntil(d.target_date) <= 7 ? 'is-near' : ''}">
+          <button class="emo-btn ${d.emoji ? '' : 'empty'}" type="button" data-action="emoji" data-id="${d.id}" aria-label="${esc(d.title)} 로고 ${d.emoji ? '바꾸기' : '붙이기'}">${d.emoji ? esc(d.emoji) : '＋'}</button>
           <div class="row-main">
             <span class="row-title">${esc(d.title)}</span>
             <span class="muted small">${fmtDate(d.target_date)}${d.count_up ? ' 부터' : ''}</span>

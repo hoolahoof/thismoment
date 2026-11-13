@@ -138,7 +138,7 @@ export const home = {
         const n = daysUntil(x.target_date);
         return `<button class="dday-card ${n <= 7 ? 'is-near' : ''}" type="button" data-dday-date="${x.target_date}" aria-label="${esc(x.title)} ${ddayLabel(x)}, 캘린더에서 날짜 보기">
           <span class="dday-card-title">${esc(x.title)}</span>
-          <span class="dday-card-ic">${ddayIcon(x.title)}</span>
+          <span class="dday-card-ic ${x.emoji ? 'has-emo' : ''}">${x.emoji ? esc(x.emoji) : ddayIcon(x.title)}</span>
           <span class="dday-card-count">${ddayLabel(x)}</span>
           <span class="dday-card-date">${fmtDate(x.target_date)}</span>
         </button>`;

@@ -153,7 +153,7 @@ function ddayCard(parent, d, big) {
   row.addSpacer(9);
   const col = row.addStack();
   col.layoutVertically();
-  put(col, d.title, big ? 14 : 13, C.muted, 'medium');
+  put(col, (d.emoji ? d.emoji + ' ' : '') + d.title, big ? 14 : 13, C.muted, 'medium');
   put(col, ddayLabel(d), big ? 46 : 38, near ? C.danger : C.text, 'bold');
   const dt = parse(d.date);
   put(col, `${dt.getMonth() + 1}.${dt.getDate()} (${WD[dt.getDay()]})`, 11, C.muted);
