@@ -34,6 +34,14 @@ export function startQuotes(el, { interval = 10000 } = {}) {
   let timer = null;
   let fade = null;
 
+  // 아래 타이머 막대를 처음부터 다시 채우기 시작
+  function restartBar() {
+    el.style.setProperty('--q-ms', interval + 'ms');
+    el.classList.remove('run');
+    void el.offsetWidth;
+    el.classList.add('run');
+  }
+
   function draw() {
     if (pos >= deck.length) {
       deck = shuffled(list.length);
@@ -53,6 +61,7 @@ export function startQuotes(el, { interval = 10000 } = {}) {
       authorEl.textContent = a;
       el.classList.remove('fading');
     };
+    restartBar();
     clearTimeout(fade);
     if (reduceMotion || !animate) return apply();
     el.classList.add('fading');

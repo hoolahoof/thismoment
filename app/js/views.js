@@ -10,6 +10,7 @@ import { calendar, setSelected } from './calendar.js';
 import { localISO, lastDayISO, nextOccurrenceISO } from './recur.js';
 import { day } from './day.js';
 import { home } from './home.js';
+import { getTheme, setTheme } from './theme.js';
 
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
 const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComponent(SHORTCUT_NAME);
@@ -278,6 +279,16 @@ const settings = {
         <div class="kv"><span>동기화</span><span data-slot="status"></span></div>
         <div class="kv"><span>자동 로그인</span><span class="muted">켜짐 · 로그아웃 전까지 유지</span></div>
       </section>
+      <h2 class="section-title">화면</h2>
+      <section class="card stack">
+        <div class="kv"><span>화면 모드</span>
+          <div class="segmented seg-inline" role="radiogroup" aria-label="화면 모드" data-slot="theme">
+            <button type="button" role="radio" data-theme-set="system">시스템</button>
+            <button type="button" role="radio" data-theme-set="light">라이트</button>
+            <button type="button" role="radio" data-theme-set="dark">다크</button>
+          </div>
+        </div>
+      </section>
       <h2 class="section-title">보안</h2>
       <section class="card stack" data-slot="lock-card">
         <div class="kv">
@@ -315,7 +326,19 @@ const settings = {
       }
     });
 
+    const paintTheme = () => {
+      const cur = getTheme();
+      el.querySelectorAll('[data-theme-set]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.themeSet === cur)));
+    };
+    paintTheme();
+
     el.addEventListener('click', async (e) => {
+      const th = e.target.closest('[data-theme-set]');
+      if (th) {
+        setTheme(th.dataset.themeSet);
+        paintTheme();
+        return;
+      }
       const sw = e.target.closest('[data-setting]');
       if (sw) {
         const st = store.getState().data.settings[0];

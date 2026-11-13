@@ -91,7 +91,7 @@ export const weekView = {
       ? '<span></span>' + days.map(({ evs }) => {
           const list = evs.filter((e) => e.all_day);
           return `<div class="wk-allcol">${list.slice(0, 3).map((ev) =>
-            `<button class="wk-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">${esc(ev.title)}</button>`).join('')}${list.length > 3 ? `<span class="chip-more">+${list.length - 3}</span>` : ''}</div>`;
+            `<button class="wk-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg};border-left-color:${colorOf(ev.color).bar}">${esc(ev.title)}</button>`).join('')}${list.length > 3 ? `<span class="chip-more">+${list.length - 3}</span>` : ''}</div>`;
         }).join('')
       : '';
 

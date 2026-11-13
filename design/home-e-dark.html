@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="ko" data-direction="e" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1, viewport-fit=cover">
+<title>ThisMoment 홈 — 방향 E · 사무적·정돈 (다크)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>/* ==========================================================================
+   ThisMoment — design tokens (1단계 시안: 방향 A/B/C × 라이트/다크)
+   사용법: <html data-direction="a|b|c" data-theme="light|dark">
+   - 방향을 고르면 해당 블록만 남기고 나머지는 지워도 됩니다.
+   - 색 이름은 의미 기반(--color-danger 등)이라 방향이 바뀌어도 컴포넌트 CSS는 그대로입니다.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 방향 공통 (색을 제외한 규격)
+   -------------------------------------------------------------------------- */
+:root {
+  /* 글꼴 */
+  --font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* 글자 크기 단계 */
+  --font-size-xs: 12px;     /* 보조 설명, 탭 라벨 */
+  --font-size-sm: 13px;     /* 메모, 칩, 섹션 제목 */
+  --font-size-md: 15px;     /* 본문, 목록 행 */
+  --font-size-lg: 17px;     /* 강조 본문, 버튼 */
+  --font-size-xl: 20px;     /* 카드 제목 */
+  --font-size-2xl: 24px;    /* 화면 제목(날짜) */
+  --font-size-3xl: 32px;    /* 디데이 숫자 */
+  --font-size-display: 44px;/* 다음 알람 시각 */
+  --line-tight: 1.25;
+  --line-normal: 1.5;
+
+  /* 간격 (4px 기준, 8px 배수 위주) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* 아이콘 */
+  --icon-size: 24px;
+  --icon-stroke: 1.75;
+
+  /* 터치 / 레이아웃 */
+  --touch-min: 44px;
+  --tabbar-h: 83px;         /* 49px 탭 + 34px 홈 인디케이터 영역 */
+  --focus-ring: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   2. 방향 A — 미니멀 (기본값)
+   -------------------------------------------------------------------------- */
+:root,
+[data-direction="a"] {
+  --color-bg: #F6F6F3;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #EFEFEB;
+  --color-text: #1B1B19;
+  --color-muted: #66665F;
+  --color-line: #E4E4DE;
+  --color-accent: #2F5FD0;
+  --color-on-accent: #FFFFFF;
+  --color-accent-soft: #E8EEFB;
+  --color-danger: #C0262D;
+  --color-danger-soft: #FBE9E8;
+  --color-ok: #1F7A3D;
+  --color-ok-soft: #E5F3EA;
+  --color-event: #6B3FC8;
+  --color-event-soft: #EFE9FA;
+  --color-warn: #8F5A00;
+  --color-warn-soft: #FBF0DC;
+  --color-neutral-soft: #EDEDE8;
+  --color-tabbar-bg: #FFFFFF;
+  --color-tabbar-line: #E4E4DE;
+
+  --radius-card: 14px;
+  --radius-control: 12px;
+  --radius-chip: 8px;
+  --radius-sheet: 20px;
+  --shadow-card: none;
+  --shadow-sheet: 0 -8px 32px rgba(27, 27, 25, 0.16);
+  --blur-bar: none;
+}
+
+[data-direction="a"][data-theme="dark"] {
+  --color-bg: #131312;
+  --color-surface: #1D1D1B;
+  --color-surface-2: #272725;
+  --color-text: #F3F3EF;
+  --color-muted: #A4A49C;
+  --color-line: #2F2F2C;
+  --color-accent: #8AAAFF;
+  --color-on-accent: #0E1630;
+  --color-accent-soft: #1E2742;
+  --color-danger: #FF8F8A;
+  --color-danger-soft: #3A1F1E;
+  --color-ok: #75D492;
+  --color-ok-soft: #1B3125;
+  --color-event: #BEA4FF;
+  --color-event-soft: #2C2444;
+  --color-warn: #E8B25A;
+  --color-warn-soft: #3A2E17;
+  --color-neutral-soft: #2A2A27;
+  --color-tabbar-bg: #1D1D1B;
+  --color-tabbar-line: #2F2F2C;
+  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   3. 방향 B — 아이폰 기본 앱 느낌 (그룹 리스트, 반투명 탭바)
+   -------------------------------------------------------------------------- */
+[data-direction="b"] {
+  --color-bg: #F2F2F7;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #E9E9EE;
+  --color-text: #111114;
+  --color-muted: #66666B;
+  --color-line: #D6D6DB;
+  --color-accent: #0062CC;
+  --color-on-accent: #FFFFFF;
+  --color-accent-soft: #E3EEFC;
+  --color-danger: #C41E2A;
+  --color-danger-soft: #FDE7E9;
+  --color-ok: #1A7433;
+  --color-ok-soft: #E3F4E8;
+  --color-event: #8944AB;
+  --color-event-soft: #F1E6F7;
+  --color-warn: #A05A00;
+  --color-warn-soft: #FDEFD9;
+  --color-neutral-soft: #E9E9EE;
+  --color-tabbar-bg: rgba(249, 249, 251, 0.78);
+  --color-tabbar-line: rgba(60, 60, 67, 0.22);
+
+  --radius-card: 12px;
+  --radius-control: 12px;
+  --radius-chip: 999px;
+  --radius-sheet: 14px;
+  --shadow-card: none;
+  --shadow-sheet: 0 -6px 28px rgba(0, 0, 0, 0.18);
+  --blur-bar: blur(22px) saturate(180%);
+}
+
+[data-direction="b"][data-theme="dark"] {
+  --color-bg: #000000;
+  --color-surface: #1C1C1E;
+  --color-surface-2: #2C2C2E;
+  --color-text: #FFFFFF;
+  --color-muted: #9A9AA1;
+  --color-line: #38383A;
+  --color-accent: #4C9DFF;
+  --color-on-accent: #001A3A;
+  --color-accent-soft: #0F2A4A;
+  --color-danger: #FF6B63;
+  --color-danger-soft: #3D1A1C;
+  --color-ok: #4CD97B;
+  --color-ok-soft: #12301D;
+  --color-event: #CF8CF2;
+  --color-event-soft: #33203E;
+  --color-warn: #FFB340;
+  --color-warn-soft: #3A2A10;
+  --color-neutral-soft: #2C2C2E;
+  --color-tabbar-bg: rgba(28, 28, 30, 0.78);
+  --color-tabbar-line: rgba(84, 84, 88, 0.55);
+  --shadow-sheet: 0 -6px 28px rgba(0, 0, 0, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   4. 방향 C — 부드럽고 화사 (큰 둥근 카드, 파스텔)
+   -------------------------------------------------------------------------- */
+[data-direction="c"] {
+  --color-bg: #FAF7FF;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1ECFB;
+  --color-text: #25213A;
+  --color-muted: #615B7A;
+  --color-line: #ECE6F7;
+  --color-accent: #4A55D6;
+  --color-on-accent: #FFFFFF;
+  --color-accent-soft: #E4E7FF;
+  --color-danger: #B3243A;
+  --color-danger-soft: #FFDDE2;
+  --color-ok: #14703C;
+  --color-ok-soft: #D6F3E1;
+  --color-event: #5E35B8;
+  --color-event-soft: #E7DCFF;
+  --color-warn: #8A4A06;
+  --color-warn-soft: #FFE6C9;
+  --color-neutral-soft: #ECE9F4;
+  --color-tabbar-bg: #FFFFFF;
+  --color-tabbar-line: transparent;
+
+  --radius-card: 28px;
+  --radius-control: 20px;
+  --radius-chip: 999px;
+  --radius-sheet: 32px;
+  --shadow-card: 0 8px 24px rgba(94, 53, 184, 0.10);
+  --shadow-sheet: 0 -10px 40px rgba(94, 53, 184, 0.22);
+  --blur-bar: none;
+}
+
+[data-direction="c"][data-theme="dark"] {
+  --color-bg: #171424;
+  --color-surface: #221E33;
+  --color-surface-2: #2D2842;
+  --color-text: #F4F1FF;
+  --color-muted: #AEA7C9;
+  --color-line: #342F4B;
+  --color-accent: #9EA8FF;
+  --color-on-accent: #131031;
+  --color-accent-soft: #2B2F66;
+  --color-danger: #FF9AA8;
+  --color-danger-soft: #4A2030;
+  --color-ok: #7EDBA3;
+  --color-ok-soft: #1C3D2C;
+  --color-event: #C9B3FF;
+  --color-event-soft: #3A2C66;
+  --color-warn: #FFC27A;
+  --color-warn-soft: #4A3216;
+  --color-neutral-soft: #2D2842;
+  --color-tabbar-bg: #2D2842;
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   5. 방향 D — 밝고 가벼운 파스텔 (TimeBlocks 참고: 흰 바탕, 연한 색 면, 작은 그림자)
+   -------------------------------------------------------------------------- */
+[data-direction="d"] {
+  --color-bg: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F3F6FC;
+  --color-text: #1F2433;
+  --color-muted: #586178;
+  --color-line: #E8ECF5;
+  --color-accent: #2B62E8;
+  --color-on-accent: #FFFFFF;
+  --color-accent-soft: #E8F0FF;
+  --color-danger: #C8283A;
+  --color-danger-soft: #FFE8EB;
+  --color-ok: #1A7A40;
+  --color-ok-soft: #E1F7E9;
+  --color-event: #6A3FD0;
+  --color-event-soft: #EFE7FF;
+  --color-warn: #8F5400;
+  --color-warn-soft: #FFF2D2;
+  --color-neutral-soft: #F0F2F7;
+  --color-tabbar-bg: #FFFFFF;
+  --color-tabbar-line: #E8ECF5;
+
+  --radius-card: 20px;
+  --radius-control: 16px;
+  --radius-chip: 999px;
+  --radius-sheet: 28px;
+  --shadow-card: 0 4px 18px rgba(43, 98, 232, 0.08);
+  --shadow-sheet: 0 -8px 32px rgba(43, 98, 232, 0.16);
+  --blur-bar: none;
+}
+
+[data-direction="d"][data-theme="dark"] {
+  --color-bg: #101424;
+  --color-surface: #181D32;
+  --color-surface-2: #212844;
+  --color-text: #EEF1FA;
+  --color-muted: #A3ACC4;
+  --color-line: #2A3150;
+  --color-accent: #8FB0FF;
+  --color-on-accent: #0A1536;
+  --color-accent-soft: #1F2C58;
+  --color-danger: #FF9AA6;
+  --color-danger-soft: #42202A;
+  --color-ok: #7DDBA0;
+  --color-ok-soft: #1B3A2A;
+  --color-event: #C5AEFF;
+  --color-event-soft: #31265E;
+  --color-warn: #F6C26E;
+  --color-warn-soft: #3D2F16;
+  --color-neutral-soft: #212844;
+  --color-tabbar-bg: #181D32;
+  --color-tabbar-line: #2A3150;
+  --shadow-card: 0 4px 18px rgba(0, 0, 0, 0.35);
+  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   6. 방향 E — 사무적·정돈 (연한 회색 바탕, 흰 패널, 얇은 선, 작은 모서리, 색은 의미 표시에만)
+   -------------------------------------------------------------------------- */
+[data-direction="e"] {
+  --color-bg: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #EEF0F3;
+  --color-text: #181B20;
+  --color-muted: #5A6270;
+  --color-line: #D8DCE2;
+  --color-accent: #2A55C0;
+  --color-on-accent: #FFFFFF;
+  --color-accent-soft: #E9EEF9;
+  --color-danger: #B42318;
+  --color-danger-soft: #FCEBE9;
+  --color-ok: #17703A;
+  --color-ok-soft: #E6F3EA;
+  --color-event: #5B3FB0;
+  --color-event-soft: #EEEAF8;
+  --color-warn: #8A5200;
+  --color-warn-soft: #FBF1DC;
+  --color-neutral-soft: #ECEEF1;
+  --color-tabbar-bg: #FFFFFF;
+  --color-tabbar-line: #D8DCE2;
+
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-chip: 4px;
+  --radius-sheet: 12px;
+  --shadow-card: none;
+  --shadow-sheet: 0 -6px 24px rgba(24, 27, 32, 0.16);
+  --blur-bar: none;
+}
+
+[data-direction="e"][data-theme="dark"] {
+  --color-bg: #0F1114;
+  --color-surface: #171A1F;
+  --color-surface-2: #20242B;
+  --color-text: #E8EAEE;
+  --color-muted: #9AA3B2;
+  --color-line: #2B3038;
+  --color-accent: #86A6F5;
+  --color-on-accent: #0A1430;
+  --color-accent-soft: #1A2540;
+  --color-danger: #F2998F;
+  --color-danger-soft: #3A1E1B;
+  --color-ok: #6FCF92;
+  --color-ok-soft: #17301F;
+  --color-event: #B9A6F2;
+  --color-event-soft: #2A2342;
+  --color-warn: #E0B15C;
+  --color-warn-soft: #35290F;
+  --color-neutral-soft: #20242B;
+  --color-tabbar-bg: #171A1F;
+  --color-tabbar-line: #2B3038;
+  --shadow-sheet: 0 -6px 24px rgba(0, 0, 0, 0.6);
+}
+</style>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:#CFCFCA}
+html[data-theme="dark"]{background:#050505}
+body{min-height:100vh;display:flex;justify-content:center;font-family:var(--font-family);-webkit-font-smoothing:antialiased}
+@media (min-width:430px){body{align-items:center;padding:24px 0}.tm-phone{border-radius:44px;box-shadow:0 20px 60px rgba(0,0,0,.28)}}
+.tm-phone{position:relative;width:390px;height:844px;overflow:hidden;background:var(--color-bg);color:var(--color-text);font-size:var(--font-size-md);line-height:var(--line-normal)}
+.tm-status{position:absolute;top:0;left:0;right:0;height:44px;z-index:3;display:flex;align-items:center;padding:0 var(--space-8);font-size:var(--font-size-md);font-weight:var(--font-weight-bold);background:var(--color-bg)}
+.tm-scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:calc(44px + var(--space-2)) var(--space-4) calc(var(--tabbar-h) + var(--space-6))}
+.tm-scroll::-webkit-scrollbar{display:none}
+.tm-i{width:var(--icon-size);height:var(--icon-size);fill:none;stroke:currentColor;stroke-width:var(--icon-stroke);stroke-linecap:round;stroke-linejoin:round;flex:none}
+p,h1,h2,blockquote,figure{margin:0}
+ul{list-style:none}
+button{font:inherit;color:inherit;background:none;border:0;text-align:left;cursor:pointer}
+:focus-visible{outline:var(--focus-ring) solid var(--color-accent);outline-offset:2px}
+.tm-quote{position:relative;overflow:hidden}
+.tm-quote blockquote{font-size:var(--font-size-sm);line-height:1.55;font-weight:var(--font-weight-medium)}
+.tm-quote figcaption{font-size:var(--font-size-xs);color:var(--color-muted);margin-top:var(--space-1)}
+.tm-q-mark{position:absolute;font-family:Georgia,"Noto Serif KR",serif;line-height:1;color:var(--color-accent);pointer-events:none}
+.tm-q-timer{position:absolute;left:0;bottom:0;height:2px;background:var(--color-accent);width:100%;transform-origin:left;animation:tm-timer 10s linear infinite;opacity:.55}
+@keyframes tm-timer{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.tm-q-timer{animation:none;transform:scaleX(1);opacity:.25}}
+.tm-today{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-2)}
+.tm-eyebrow{font-size:var(--font-size-sm);color:var(--color-muted);font-weight:var(--font-weight-medium)}
+.tm-today h1{font-size:var(--font-size-2xl);line-height:var(--line-tight);font-weight:var(--font-weight-bold);letter-spacing:-.02em}
+.tm-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 var(--space-3);border-radius:var(--radius-chip);font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);white-space:nowrap}
+.tm-chip-danger{background:var(--color-danger-soft);color:var(--color-danger)}
+.tm-dday-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+.tm-dday{position:relative;background:var(--color-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.tm-dday p{line-height:var(--line-tight)}
+.tm-dday-title{font-size:var(--font-size-sm);font-weight:var(--font-weight-medium)}
+.tm-dday-count{font-size:var(--font-size-3xl);font-weight:var(--font-weight-bold);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tm-dday-date{font-size:var(--font-size-xs);color:var(--color-muted)}
+.tm-sec-title{font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);color:var(--color-muted)}
+.tm-card{background:var(--color-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden}
+.tm-alarm-label{font-size:var(--font-size-sm);color:var(--color-muted);font-weight:var(--font-weight-medium)}
+.tm-alarm-time{font-size:var(--font-size-display);line-height:1.1;font-weight:var(--font-weight-bold);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tm-alarm-sub{font-size:var(--font-size-md);font-weight:var(--font-weight-medium)}
+.tm-row{display:flex;align-items:center;min-height:var(--touch-min)}
+.tm-row-ic{display:none}
+.tm-time{font-variant-numeric:tabular-nums;font-weight:var(--font-weight-bold);font-size:var(--font-size-md);width:52px;flex:none}
+.tm-row-main{display:flex;flex-direction:column;min-width:0}
+.tm-row-main b{font-weight:var(--font-weight-medium);font-size:var(--font-size-md);line-height:var(--line-tight)}
+.tm-note{font-size:var(--font-size-xs);line-height:var(--line-tight);margin-top:2px;font-weight:var(--font-weight-medium)}
+.tm-note-danger{color:var(--color-danger)}.tm-note-ok{color:var(--color-ok)}.tm-note-muted{color:var(--color-muted)}
+.tm-event{display:flex;align-items:center;gap:var(--space-3);min-height:var(--touch-min)}
+.tm-event-bar{width:4px;height:40px;border-radius:2px;background:var(--color-event);flex:none}
+.tm-event-time{font-size:var(--font-size-xs);color:var(--color-muted);font-variant-numeric:tabular-nums}
+.tm-event-title{font-size:var(--font-size-md);font-weight:var(--font-weight-medium)}
+.tm-todo{display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:var(--touch-min)}
+.tm-check{width:22px;height:22px;border-radius:50%;border:1.75px solid var(--color-muted);display:grid;place-items:center;flex:none}
+.tm-check .tm-i{width:14px;height:14px;stroke-width:2.4;opacity:0}
+.tm-todo.is-done .tm-check{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-on-accent)}
+.tm-todo.is-done .tm-check .tm-i{opacity:1}
+.tm-todo.is-done .tm-todo-text{text-decoration:line-through;color:var(--color-muted)}
+.tm-tabbar{position:absolute;left:0;right:0;bottom:0;height:var(--tabbar-h);display:grid;grid-template-columns:repeat(5,1fr);align-items:start;padding-top:var(--space-1);background:var(--color-tabbar-bg);border-top:.5px solid var(--color-tabbar-line);-webkit-backdrop-filter:var(--blur-bar);backdrop-filter:var(--blur-bar);z-index:4}
+.tm-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:var(--touch-min);height:49px;color:var(--color-muted);text-decoration:none;font-size:var(--font-size-xs);font-weight:var(--font-weight-medium)}
+.tm-tab.is-active{color:var(--color-accent);font-weight:var(--font-weight-bold)}
+.tm-home-bar{position:absolute;left:50%;bottom:8px;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:var(--color-text);opacity:.85;z-index:5}
+
+/* 방향 E — 사무적·정돈: 얇은 선, 작은 모서리, 표처럼 정렬된 행, 색은 상태 표시에만 */
+.tm-quote{padding:var(--space-3) var(--space-3) var(--space-3) var(--space-10);margin:0 0 var(--space-4);background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-card)}
+.tm-q-open{left:var(--space-3);top:4px;font-size:40px;color:var(--color-muted)}
+.tm-q-close{right:var(--space-3);bottom:-16px;font-size:40px;color:var(--color-muted)}
+.tm-quote{padding-right:var(--space-10)}
+.tm-quote blockquote{font-weight:var(--font-weight-regular);color:var(--color-text)}
+.tm-q-timer{height:2px;left:0;right:0;width:100%;opacity:.6}
+.tm-today{margin:0 0 var(--space-4);align-items:center}
+.tm-today h1{font-size:22px;letter-spacing:-.01em}
+.tm-chip{min-height:26px;padding:0 var(--space-2);font-weight:var(--font-weight-medium);border:1px solid currentColor;background:var(--color-danger-soft)}
+.tm-dday-grid{gap:var(--space-2)}
+.tm-dday{padding:var(--space-3) var(--space-4);border:1px solid var(--color-line);display:grid;grid-template-columns:1fr auto;column-gap:var(--space-2);align-items:end}
+.tm-dday-title{grid-column:1;font-weight:var(--font-weight-medium)}
+.tm-dday-ic{grid-column:2;grid-row:1;color:var(--color-muted);justify-self:end}
+.tm-dday-ic .tm-i{width:18px;height:18px}
+.tm-dday-count{grid-column:1/3;font-size:30px;margin-top:2px}
+.tm-dday-date{grid-column:1/3}
+.tm-dday-danger{border-left:3px solid var(--color-danger)}
+.tm-dday-danger .tm-dday-count{color:var(--color-danger)}
+.tm-dday-accent{border-left:3px solid var(--color-accent)}
+.tm-sec{margin-top:var(--space-4)}
+.tm-sec-title{margin:0 0 var(--space-2);font-size:var(--font-size-xs);letter-spacing:.06em;font-weight:var(--font-weight-bold)}
+.tm-card{border:1px solid var(--color-line);border-radius:var(--radius-card)}
+.tm-alarm-next{display:grid;grid-template-columns:auto 1fr;column-gap:var(--space-4);align-items:end;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-line);background:var(--color-accent-soft)}
+.tm-alarm-label{grid-column:1/3;color:var(--color-accent);font-weight:var(--font-weight-bold)}
+.tm-alarm-time{font-size:36px;color:var(--color-text)}
+.tm-alarm-sub{padding-bottom:6px;color:var(--color-text)}
+.tm-rows{padding:0 var(--space-4)}
+.tm-row{min-height:52px;border-top:1px solid var(--color-line);gap:var(--space-2)}
+.tm-row:first-child{border-top:0}
+.tm-row-main{flex:1;flex-direction:row;align-items:center;justify-content:space-between;gap:var(--space-2)}
+.tm-note{margin:0;text-align:right}
+.tm-note::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+.tm-event-card,.tm-todo-card{padding:var(--space-1) var(--space-4)}
+.tm-event-bar{width:3px;height:36px;border-radius:1px}
+.tm-event-time{font-size:var(--font-size-sm)}
+.tm-check{border-radius:5px;border-width:1.5px}
+.tm-todo+.tm-todo{border-top:1px solid var(--color-line)}
+.tm-tabbar{padding-top:0;align-items:start}
+.tm-tab{height:49px;border-radius:0}
+.tm-tab.is-active{box-shadow:inset 0 2px 0 var(--color-accent)}
+</style>
+</head>
+<body>
+<div class="tm-phone" id="tm-root">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="tm-i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="tm-i-cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 3v3M16 3v3"/></symbol>
+<symbol id="tm-i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+<symbol id="tm-i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15zM10 21h4"/></symbol>
+<symbol id="tm-i-set" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4"/></symbol>
+<symbol id="tm-i-plane" viewBox="0 0 24 24"><path d="M21 4L3 11l7 2.5L12.5 21zM10 13.5L21 4"/></symbol>
+<symbol id="tm-i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8c-1-3-5-4-5-1.5S10 8 12 8zM12 8c1-3 5-4 5-1.5S14 8 12 8z"/></symbol>
+<symbol id="tm-i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+<symbol id="tm-i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></symbol>
+<symbol id="tm-i-pill" viewBox="0 0 24 24"><path d="M10.5 20.5a5 5 0 0 1-7-7l9-9a5 5 0 0 1 7 7zM8.5 8.5l7 7"/></symbol>
+<symbol id="tm-i-dumb" viewBox="0 0 24 24"><path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/></symbol>
+<symbol id="tm-i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</defs></svg>
+  <div class="tm-status" aria-hidden="true"><span>9:41</span></div>
+  <main class="tm-scroll">
+
+    <figure class="tm-quote" aria-live="off">
+      <span class="tm-q-mark tm-q-open" aria-hidden="true">&ldquo;</span>
+      <blockquote>예술의 목적은 사물의 겉모습이 아니라 그 안에 담긴 의미를 그려내는 것이다.</blockquote>
+      <figcaption>&mdash; 아리스토텔레스</figcaption>
+      <span class="tm-q-mark tm-q-close" aria-hidden="true">&rdquo;</span>
+      <span class="tm-q-timer" aria-hidden="true"></span>
+    </figure>
+
+    <header class="tm-today">
+      <div>
+        <p class="tm-eyebrow">오늘</p>
+        <h1>11월 13일 금요일</h1>
+      </div>
+      <span class="tm-chip tm-chip-danger">휴일 · 창립기념일</span>
+    </header>
+
+    <section class="tm-dday-grid" aria-label="디데이">
+      <article class="tm-dday tm-dday-danger">
+        <span class="tm-dday-ic"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-plane"/></svg></span>
+        <p class="tm-dday-title">여행</p>
+        <p class="tm-dday-count">D-5</p>
+        <p class="tm-dday-date">11월 18일 수요일</p>
+      </article>
+      <article class="tm-dday tm-dday-accent">
+        <span class="tm-dday-ic"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-gift"/></svg></span>
+        <p class="tm-dday-title">크리스마스</p>
+        <p class="tm-dday-count">D-42</p>
+        <p class="tm-dday-date">12월 25일 금요일</p>
+      </article>
+    </section>
+
+    <section class="tm-sec">
+      <h2 class="tm-sec-title">알람</h2>
+      <div class="tm-card tm-alarm">
+        <div class="tm-alarm-next">
+          <p class="tm-alarm-label">다음 알람</p>
+          <p class="tm-alarm-time">23:30</p>
+          <p class="tm-alarm-sub">오늘 · 약 먹기</p>
+        </div>
+        <ul class="tm-rows">
+          <li class="tm-row">
+            <span class="tm-row-ic tm-tone-danger"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-brief"/></svg></span>
+            <span class="tm-time">07:00</span>
+            <span class="tm-row-main"><b>출근</b><small class="tm-note tm-note-danger">휴일이라 쉼 · 창립기념일</small></span>
+          </li>
+          <li class="tm-row">
+            <span class="tm-row-ic tm-tone-ok"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-pill"/></svg></span>
+            <span class="tm-time">23:30</span>
+            <span class="tm-row-main"><b>약 먹기</b><small class="tm-note tm-note-ok">울림</small></span>
+          </li>
+          <li class="tm-row">
+            <span class="tm-row-ic tm-tone-neutral"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-dumb"/></svg></span>
+            <span class="tm-time">06:00</span>
+            <span class="tm-row-main"><b>운동</b><small class="tm-note tm-note-muted">울림 완료</small></span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="tm-sec">
+      <h2 class="tm-sec-title">오늘 일정</h2>
+      <div class="tm-card tm-event-card">
+        <div class="tm-event">
+          <span class="tm-event-bar" aria-hidden="true"></span>
+          <div><p class="tm-event-time">23:00 – 23:50</p><p class="tm-event-title">팀 회의</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tm-sec">
+      <h2 class="tm-sec-title">오늘 할 일</h2>
+      <div class="tm-card tm-todo-card">
+        <button class="tm-todo" role="checkbox" aria-checked="false"><span class="tm-check"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-check"/></svg></span><span class="tm-todo-text">메일 답장</span></button>
+        <button class="tm-todo is-done" role="checkbox" aria-checked="true"><span class="tm-check"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-check"/></svg></span><span class="tm-todo-text">장보기</span></button>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tm-tabbar" aria-label="주 메뉴">
+    <a class="tm-tab is-active" href="#" aria-current="page"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-home"/></svg><span>홈</span></a>
+    <a class="tm-tab" href="#"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-cal"/></svg><span>캘린더</span></a>
+    <a class="tm-tab" href="#"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-flag"/></svg><span>디데이</span></a>
+    <a class="tm-tab" href="#"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-bell"/></svg><span>알람</span></a>
+    <a class="tm-tab" href="#"><svg class="tm-i" aria-hidden="true"><use href="#tm-i-set"/></svg><span>설정</span></a>
+  </nav>
+  <span class="tm-home-bar" aria-hidden="true"></span>
+</div>
+</body>
+</html>

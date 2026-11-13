@@ -1,3 +1,4 @@
+import { initTheme } from './theme.js';
 import { supabase } from './supabase.js';
 import * as store from './store.js';
 import { renderAuth, checkPassword } from './auth.js';
@@ -5,6 +6,7 @@ import { views, statusBadge } from './views.js';
 import { icons } from './util.js';
 import { isLockEnabled, verifyLock, renderLock, watchRelock, disableLock } from './lock.js';
 
+initTheme();
 const root = document.getElementById('app');
 const TABS = [
   { id: 'home', label: '홈' },

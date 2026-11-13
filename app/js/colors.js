@@ -1,19 +1,19 @@
-// 일정 색 14가지 (bg: 칩·블록 배경, bar: 진한 표시색)
+// 일정 색 14가지 (실제 색 값은 tokens.css 의 --c-이름-bg/bar, 다크 모드 자동 대응)
 export const COLORS = {
-  red: { name: '빨강', bg: '#FFDADA', bar: '#D93636' },
-  coral: { name: '산호', bg: '#FFE1D6', bar: '#E8603C' },
-  orange: { name: '주황', bg: '#FFE4CC', bar: '#E07B24' },
-  amber: { name: '노랑', bg: '#FFF0BF', bar: '#C99400' },
-  lime: { name: '연두', bg: '#E8F5CC', bar: '#6FA312' },
-  green: { name: '초록', bg: '#D9F2E3', bar: '#2E9E5B' },
-  teal: { name: '청록', bg: '#D0F2EC', bar: '#12998A' },
-  cyan: { name: '하늘', bg: '#D3EFF8', bar: '#0B8DB0' },
-  blue: { name: '파랑', bg: '#DCE6FF', bar: '#2F5FD0' },
-  indigo: { name: '남색', bg: '#E0E2FF', bar: '#4148C2' },
-  purple: { name: '보라', bg: '#ECE1FF', bar: '#7A4FD6' },
-  pink: { name: '분홍', bg: '#FCDDF0', bar: '#CF3F98' },
-  brown: { name: '갈색', bg: '#EFE3D7', bar: '#8A6243' },
-  gray: { name: '회색', bg: '#E6E6E2', bar: '#5E5E66' },
+  red: { name: '빨강', bg: 'var(--c-red-bg)', bar: 'var(--c-red-bar)' },
+  coral: { name: '산호', bg: 'var(--c-coral-bg)', bar: 'var(--c-coral-bar)' },
+  orange: { name: '주황', bg: 'var(--c-orange-bg)', bar: 'var(--c-orange-bar)' },
+  amber: { name: '노랑', bg: 'var(--c-amber-bg)', bar: 'var(--c-amber-bar)' },
+  lime: { name: '연두', bg: 'var(--c-lime-bg)', bar: 'var(--c-lime-bar)' },
+  green: { name: '초록', bg: 'var(--c-green-bg)', bar: 'var(--c-green-bar)' },
+  teal: { name: '청록', bg: 'var(--c-teal-bg)', bar: 'var(--c-teal-bar)' },
+  cyan: { name: '하늘', bg: 'var(--c-cyan-bg)', bar: 'var(--c-cyan-bar)' },
+  blue: { name: '파랑', bg: 'var(--c-blue-bg)', bar: 'var(--c-blue-bar)' },
+  indigo: { name: '남색', bg: 'var(--c-indigo-bg)', bar: 'var(--c-indigo-bar)' },
+  purple: { name: '보라', bg: 'var(--c-purple-bg)', bar: 'var(--c-purple-bar)' },
+  pink: { name: '분홍', bg: 'var(--c-pink-bg)', bar: 'var(--c-pink-bar)' },
+  brown: { name: '갈색', bg: 'var(--c-brown-bg)', bar: 'var(--c-brown-bar)' },
+  gray: { name: '회색', bg: 'var(--c-gray-bg)', bar: 'var(--c-gray-bar)' },
 };
 export const colorOf = (c) => COLORS[c] ?? COLORS.blue;
 

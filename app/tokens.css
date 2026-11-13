@@ -1,0 +1,187 @@
+/* ==========================================================================
+   ThisMoment — 디자인 토큰 · 방향 E (사무적·정돈)
+   원본 시안: design/home-e-light.html, design/home-e-dark.html
+   - 색 이름은 의미 기반. 컴포넌트 CSS(styles.css)는 이 변수만 쓴다.
+   - 다크 모드: 기기 설정을 따르고(prefers-color-scheme), 설정 화면에서
+     <html data-theme="light|dark"> 로 직접 고를 수 있다. (이 파일은 gen_tokens.py 로 만들었음)
+   ========================================================================== */
+
+:root {
+  /* 글꼴 */
+  --font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* 글자 크기 단계 */
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 17px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+  --font-size-display: 44px;
+  --line-tight: 1.25;
+  --line-normal: 1.5;
+
+  /* 간격 (4px 기준) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* 아이콘 / 터치 / 레이아웃 */
+  --icon-size: 24px;
+  --icon-stroke: 1.75;
+  --touch-min: 44px;
+  --tabbar-h: 49px;
+  --focus-ring: 2px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+
+  /* 방향 E: 얇은 선, 작은 모서리, 그림자 없음 */
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-chip: 4px;
+  --radius-sheet: 12px;
+  --shadow-card: none;
+  --blur-bar: none;
+
+  color-scheme: light;
+
+  /* 색 — 라이트 */
+  --color-bg: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #EEF0F3;
+  --color-text: #181B20;
+  --color-muted: #5A6270;
+  --color-line: #D8DCE2;
+  --color-line-strong: #B9BFC9;
+  --color-accent: #2A55C0;
+  --color-on-accent: #FFFFFF;
+  --color-accent-soft: #E9EEF9;
+  --color-danger: #B42318;
+  --color-danger-soft: #FCEBE9;
+  --color-ok: #17703A;
+  --color-ok-soft: #E6F3EA;
+  --color-event: #5B3FB0;
+  --color-event-soft: #EEEAF8;
+  --color-warn: #8A5200;
+  --color-warn-soft: #FBF1DC;
+  --color-neutral-soft: #ECEEF1;
+  --color-tabbar-bg: #FFFFFF;
+  --color-tabbar-line: #D8DCE2;
+  --color-backdrop: rgba(24, 27, 32, 0.45);
+  --shadow-sheet: 0 -6px 24px rgba(24, 27, 32, 0.16);
+  --shadow-pop: 0 6px 18px rgba(24, 27, 32, 0.22);
+
+  /* 일정 색 14가지 (칩·블록 배경 / 진한 표시색) */
+  --c-red-bg: #FFDADA; --c-red-bar: #D93636;
+  --c-coral-bg: #FFE1D6; --c-coral-bar: #E8603C;
+  --c-orange-bg: #FFE4CC; --c-orange-bar: #E07B24;
+  --c-amber-bg: #FFF0BF; --c-amber-bar: #C99400;
+  --c-lime-bg: #E8F5CC; --c-lime-bar: #6FA312;
+  --c-green-bg: #D9F2E3; --c-green-bar: #2E9E5B;
+  --c-teal-bg: #D0F2EC; --c-teal-bar: #12998A;
+  --c-cyan-bg: #D3EFF8; --c-cyan-bar: #0B8DB0;
+  --c-blue-bg: #DCE6FF; --c-blue-bar: #2F5FD0;
+  --c-indigo-bg: #E0E2FF; --c-indigo-bar: #4148C2;
+  --c-purple-bg: #ECE1FF; --c-purple-bar: #7A4FD6;
+  --c-pink-bg: #FCDDF0; --c-pink-bar: #CF3F98;
+  --c-brown-bg: #EFE3D7; --c-brown-bar: #8A6243;
+  --c-gray-bg: #E6E6E2; --c-gray-bar: #5E5E66;
+}
+
+/* 색 — 다크 (기기가 다크이고, 사용자가 라이트를 고르지 않았을 때) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  --color-bg: #0F1114;
+  --color-surface: #171A1F;
+  --color-surface-2: #20242B;
+  --color-text: #E8EAEE;
+  --color-muted: #9AA3B2;
+  --color-line: #2B3038;
+  --color-line-strong: #3E4550;
+  --color-accent: #86A6F5;
+  --color-on-accent: #0A1430;
+  --color-accent-soft: #1A2540;
+  --color-danger: #F2998F;
+  --color-danger-soft: #3A1E1B;
+  --color-ok: #6FCF92;
+  --color-ok-soft: #17301F;
+  --color-event: #B9A6F2;
+  --color-event-soft: #2A2342;
+  --color-warn: #E0B15C;
+  --color-warn-soft: #35290F;
+  --color-neutral-soft: #20242B;
+  --color-tabbar-bg: #171A1F;
+  --color-tabbar-line: #2B3038;
+  --color-backdrop: rgba(0, 0, 0, 0.62);
+  --shadow-sheet: 0 -6px 24px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.6);
+  --c-red-bg: #49373B; --c-red-bar: #E89292;
+  --c-coral-bg: #4B3A39; --c-coral-bar: #EEA08B;
+  --c-orange-bg: #4A4039; --c-orange-bar: #ECB98D;
+  --c-amber-bg: #4D4529; --c-amber-bar: #FACC49;
+  --c-lime-bg: #3B4B29; --c-lime-bar: #AEE649;
+  --c-green-bg: #2D463D; --c-green-bar: #73D39A;
+  --c-teal-bg: #214A4A; --c-teal-bar: #41E4D2;
+  --c-cyan-bg: #234451; --c-cyan-bar: #47CBEF;
+  --c-blue-bg: #353D4E; --c-blue-bar: #95ADE4;
+  --c-indigo-bg: #373A4D; --c-indigo-bar: #9CA0DD;
+  --c-purple-bg: #3B384E; --c-purple-bar: #AE96E4;
+  --c-pink-bg: #483847; --c-pink-bar: #E297C6;
+  --c-brown-bg: #403A38; --c-brown-bar: #C2A086;
+  --c-gray-bg: #37393F; --c-gray-bar: #9B9BA3;
+  }
+}
+
+/* 색 — 다크 (사용자가 직접 고름) */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0F1114;
+  --color-surface: #171A1F;
+  --color-surface-2: #20242B;
+  --color-text: #E8EAEE;
+  --color-muted: #9AA3B2;
+  --color-line: #2B3038;
+  --color-line-strong: #3E4550;
+  --color-accent: #86A6F5;
+  --color-on-accent: #0A1430;
+  --color-accent-soft: #1A2540;
+  --color-danger: #F2998F;
+  --color-danger-soft: #3A1E1B;
+  --color-ok: #6FCF92;
+  --color-ok-soft: #17301F;
+  --color-event: #B9A6F2;
+  --color-event-soft: #2A2342;
+  --color-warn: #E0B15C;
+  --color-warn-soft: #35290F;
+  --color-neutral-soft: #20242B;
+  --color-tabbar-bg: #171A1F;
+  --color-tabbar-line: #2B3038;
+  --color-backdrop: rgba(0, 0, 0, 0.62);
+  --shadow-sheet: 0 -6px 24px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.6);
+  --c-red-bg: #49373B; --c-red-bar: #E89292;
+  --c-coral-bg: #4B3A39; --c-coral-bar: #EEA08B;
+  --c-orange-bg: #4A4039; --c-orange-bar: #ECB98D;
+  --c-amber-bg: #4D4529; --c-amber-bar: #FACC49;
+  --c-lime-bg: #3B4B29; --c-lime-bar: #AEE649;
+  --c-green-bg: #2D463D; --c-green-bar: #73D39A;
+  --c-teal-bg: #214A4A; --c-teal-bar: #41E4D2;
+  --c-cyan-bg: #234451; --c-cyan-bar: #47CBEF;
+  --c-blue-bg: #353D4E; --c-blue-bar: #95ADE4;
+  --c-indigo-bg: #373A4D; --c-indigo-bar: #9CA0DD;
+  --c-purple-bg: #3B384E; --c-purple-bar: #AE96E4;
+  --c-pink-bg: #483847; --c-pink-bar: #E297C6;
+  --c-brown-bg: #403A38; --c-brown-bar: #C2A086;
+  --c-gray-bg: #37393F; --c-gray-bar: #9B9BA3;
+}

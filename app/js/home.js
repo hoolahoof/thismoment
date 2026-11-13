@@ -1,7 +1,7 @@
 // 홈(대시보드): 오늘 날짜·휴일 여부, 가까운 디데이, 오늘 알람(울림/쉼), 오늘 일정, 오늘 할 일을 한 화면에.
 import * as store from './store.js';
 import { holidayOn, alarmOn, nextRing } from './holidays.js';
-import { esc, toISODate, parseDate, todayLocal, ddayLabel, daysUntil } from './util.js';
+import { esc, ddayIcon, fmtDate, icons, toISODate, parseDate, todayLocal, ddayLabel, daysUntil } from './util.js';
 import { eventsOn, eventTime, addDays } from './recur.js';
 import { colorOf, REPEAT_ICON } from './colors.js';
 import { setSelected } from './calendar.js';
@@ -36,22 +36,23 @@ export const home = {
   mount(el) {
     el.innerHTML = `
       <button class="quote" type="button" data-slot="quote" hidden aria-label="오늘의 명언, 누르면 다음 명언">
-        <span class="quote-mark" aria-hidden="true">“</span>
+        <span class="quote-mark quote-mark-open" aria-hidden="true">“</span>
         <span class="quote-body">
           <span class="quote-text" data-slot="q-text"></span>
           <span class="quote-author" data-slot="q-author"></span>
         </span>
-        <span class="quote-mark quote-mark-end" aria-hidden="true">”</span>
+        <span class="quote-mark quote-mark-close" aria-hidden="true">”</span>
+        <span class="quote-timer" aria-hidden="true"></span>
       </button>
 
       <header class="page-head home-head">
         <div class="home-head-text">
-          <span class="muted small">오늘</span>
+          <span class="eyebrow">오늘</span>
           <h1 data-slot="date"></h1>
         </div>
         <span data-slot="chip"></span>
       </header>
-      <div class="dday-strip" data-slot="strip"></div>
+      <div class="dday-grid" data-slot="strip"></div>
 
       <h2 class="section-title">알람</h2>
       <section class="card" data-slot="alarms"></section>
@@ -119,7 +120,15 @@ export const home = {
       .sort((a, b) => a.target_date.localeCompare(b.target_date))
       .slice(0, 3);
     el.querySelector('[data-slot=strip]').innerHTML = top
-      .map((x) => `<button class="mini-card" type="button" data-dday-date="${x.target_date}" aria-label="${esc(x.title)} ${ddayLabel(x)}, 캘린더에서 날짜 보기"><span class="muted">${esc(x.title)}</span><strong class="${daysUntil(x.target_date) <= 7 ? 'red' : ''}">${ddayLabel(x)}</strong></button>`)
+      .map((x) => {
+        const n = daysUntil(x.target_date);
+        return `<button class="dday-card ${n <= 7 ? 'is-near' : ''}" type="button" data-dday-date="${x.target_date}" aria-label="${esc(x.title)} ${ddayLabel(x)}, 캘린더에서 날짜 보기">
+          <span class="dday-card-title">${esc(x.title)}</span>
+          <span class="dday-card-ic">${ddayIcon(x.title)}</span>
+          <span class="dday-card-count">${ddayLabel(x)}</span>
+          <span class="dday-card-date">${fmtDate(x.target_date)}</span>
+        </button>`;
+      })
       .join('');
 
     // 알람
@@ -171,8 +180,10 @@ export const home = {
           <li>
             <button class="card ev-row ${ended ? 'past' : ''} ${ongoing ? 'now' : ''}" data-go="day">
               <span class="ev-bar" style="background:${colorOf(ev.color).bar}"></span>
-              <span class="ev-time">${eventTime(ev)}</span>
-              <span class="ev-title"><span>${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
+              <span class="ev-text">
+                <span class="ev-time">${eventTime(ev)}</span>
+                <span class="ev-title"><span>${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
+              </span>
             </button>
           </li>`;
         }).join('')
@@ -189,7 +200,7 @@ export const home = {
       ? shown.map((t) => `
           <li class="card todo ${t.done ? 'done' : ''}">
             <button class="todo-check" data-todo="${t.id}" aria-pressed="${t.done}" aria-label="${esc(t.title)} 완료">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+              ${icons.check}
             </button>
             <span class="todo-title">${esc(t.title)}</span>
           </li>`).join('')

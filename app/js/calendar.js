@@ -314,7 +314,7 @@ export const calendar = {
       ].join(' ');
       const maxChips = hol ? 1 : 2;
       const chips = evs.slice(0, maxChips)
-        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">${esc(ev.title)}</span>`)
+        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg};border-left-color:${colorOf(ev.color).bar}">${esc(ev.title)}</span>`)
         .join('');
       const more = evs.length > maxChips ? `<span class="chip-more">+${evs.length - maxChips}</span>` : '';
       const label = `${d.getMonth() + 1}월 ${d.getDate()}일${hol ? `, ${hol}` : ''}${evs.length ? `, 일정 ${evs.length}개` : ''}`;
@@ -338,8 +338,10 @@ export const calendar = {
           <li>
             <button class="card ev-row" data-event="${ev.id}" data-occ="${ev._occ}">
               <span class="ev-bar" style="background:${colorOf(ev.color).bar}"></span>
-              <span class="ev-time">${eventTime(ev)}</span>
-              <span class="ev-title"><span>${esc(ev.title)}${ev.is_holiday ? '<span class="hol-badge">휴일</span>' : ''}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
+              <span class="ev-text">
+                <span class="ev-time">${eventTime(ev)}</span>
+                <span class="ev-title"><span>${esc(ev.title)}${ev.is_holiday ? '<span class="hol-badge">휴일</span>' : ''}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
+              </span>
             </button>
           </li>`).join('')
       : '<li class="empty muted">일정이 없어요. 오른쪽 아래 + 로 추가하세요.</li>';
