@@ -69,6 +69,8 @@ export const calendar = {
       <section class="day-panel" data-slot="day-panel">
         <div class="day-panel-head">
           <h2 data-slot="day-title"></h2><span data-slot="day-hol" class="red small"></span>
+          <span class="grow"></span>
+          <a class="btn pill" href="#/day" data-action="to-day">시간표 보기</a>
         </div>
         <ul class="list" data-slot="day-list"></ul>
       </section>

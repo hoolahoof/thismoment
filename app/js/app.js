@@ -9,7 +9,6 @@ const root = document.getElementById('app');
 const TABS = [
   { id: 'home', label: '홈' },
   { id: 'calendar', label: '캘린더' },
-  { id: 'day', label: '하루' },
   { id: 'dday', label: '디데이' },
   { id: 'alarm', label: '알람' },
   { id: 'settings', label: '설정' },
@@ -52,7 +51,8 @@ function showRoute() {
     el.replaceWith(fresh);
     views[id].mount(fresh);
     root.querySelectorAll('[data-tab]').forEach((a) => {
-      if (a.dataset.tab === id) a.setAttribute('aria-current', 'page');
+      // 하루 화면은 탭이 없으니 캘린더 탭이 켜진 것으로 보여준다
+      if (a.dataset.tab === (id === 'day' ? 'calendar' : id)) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     });
     window.scrollTo(0, 0);

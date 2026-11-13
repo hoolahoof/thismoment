@@ -258,7 +258,7 @@ const settings = {
         <div class="copy-row"><span>③ 토큰 <code data-slot="token">…</code></span><button class="btn" data-copy="token" type="button">복사</button></div>
         <a class="btn primary block-link" href="${SHORTCUT_RUN_URL}">지금 시계에 반영 (단축어 실행)</a>
       </section>
-      <button class="btn danger block" data-action="logout" type="button">로그아웃</button>`;
+      <button class="btn danger wide" data-action="logout" type="button">로그아웃</button>`;
 
     lockSupported().then((ok) => {
       if (!ok) {

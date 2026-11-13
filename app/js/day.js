@@ -21,6 +21,7 @@ let nowTimer = null;
 export const day = {
   mount(el) {
     el.innerHTML = `
+      <a class="back-link" href="#/calendar">‹ 캘린더</a>
       <header class="page-head day-head">
         <div class="day-head-text">
           <span class="muted small" data-slot="ym"></span>

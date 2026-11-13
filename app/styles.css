@@ -100,7 +100,7 @@ a { color: var(--accent); }
 .btn svg { width: 18px; height: 18px; }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .btn.danger { color: var(--holiday); }
-.btn.block { width: 100%; margin-top: 8px; }
+.btn.wide { width: 100%; margin-top: 8px; }
 .btn:disabled { opacity: 0.6; cursor: default; }
 .icon-btn {
   width: 44px; height: 44px; border: 0; background: transparent; color: var(--muted);
@@ -503,3 +503,7 @@ dialog.sheet.tall { height: 92dvh; }
 .ev-row.past { opacity: 0.55; }
 .ev-row.now { box-shadow: inset 0 0 0 2px var(--accent); }
 @media (max-width: 380px) { .tabbar a { font-size: 10px; } }
+
+/* ── 하루 화면 뒤로가기 ── */
+.back-link { align-self: flex-start; min-height: 36px; display: inline-flex; align-items: center; padding: 0 4px; color: var(--muted); font-size: 14px; text-decoration: none; }
+a.btn.pill { text-decoration: none; }
