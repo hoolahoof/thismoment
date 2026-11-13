@@ -66,6 +66,7 @@
   --color-accent: #2A55C0;
   --color-on-accent: #FFFFFF;
   --color-accent-soft: #E9EEF9;
+  --color-sat-soft: #E2F1FB;
   --color-danger: #B42318;
   --color-danger-soft: #FCEBE9;
   --color-ok: #17703A;
@@ -112,6 +113,7 @@
   --color-accent: #86A6F5;
   --color-on-accent: #0A1430;
   --color-accent-soft: #1A2540;
+  --color-sat-soft: #15293A;
   --color-danger: #F2998F;
   --color-danger-soft: #3A1E1B;
   --color-ok: #6FCF92;
@@ -156,6 +158,7 @@
   --color-accent: #86A6F5;
   --color-on-accent: #0A1430;
   --color-accent-soft: #1A2540;
+  --color-sat-soft: #15293A;
   --color-danger: #F2998F;
   --color-danger-soft: #3A1E1B;
   --color-ok: #6FCF92;
