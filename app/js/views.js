@@ -136,8 +136,12 @@ const alarm = {
           <label class="check"><input type="checkbox" name="skip_holidays" checked> 공휴일에는 울리지 않기</label>
           <p class="muted small hint-line">법정 공휴일과 내가 ‘휴일’로 만든 날이 모두 포함돼요.</p>
         </div>
-        <button class="btn primary" type="submit">저장</button>
         <p class="form-msg" role="status"></p>
+        <div class="sheet-actions">
+          <span class="grow"></span>
+          <button class="btn" type="button" data-action="cancel-new">취소</button>
+          <button class="btn primary" type="submit">저장</button>
+        </div>
       </form>
       <ul class="list" data-slot="list"></ul>
       <a class="btn block-link" href="${SHORTCUT_RUN_URL}">알람 바꾼 뒤 지금 시계에 반영</a>
@@ -164,6 +168,21 @@ const alarm = {
       form.querySelector('[data-slot=once-hint]').hidden = !once;
       form.querySelector('[data-slot=repeat-opts]').hidden = once;
     };
+    // 취소: 입력한 내용을 비우고 창을 닫는다
+    form.querySelector('[data-action=cancel-new]').addEventListener('click', () => {
+      formDays = [1, 2, 3, 4, 5];
+      form.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(formDays.includes(Number(c.dataset.day)))));
+      form.elements.namedItem('label').value = '';
+      form.elements.namedItem('time').value = '07:00';
+      form.elements.namedItem('skip_holidays').checked = true;
+      const msg = form.querySelector('.form-msg');
+      msg.textContent = '';
+      msg.classList.remove('error');
+      syncOnce();
+      form.hidden = true;
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      toggleBtn.focus();
+    });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fe = form.elements;
