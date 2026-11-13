@@ -223,3 +223,79 @@ a { color: var(--accent); }
 .stack > .block-link { margin: 12px 0; padding: 0; border-top: 0; }
 .ok-text { color: var(--ok); font-weight: 500; }
 .error-text { color: var(--holiday); font-weight: 500; }
+
+/* ── 월간 캘린더 ── */
+.red { color: var(--holiday); }
+.blue { color: var(--sat); }
+.btn.pill { height: 36px; border-radius: 18px; padding: 0 14px; font-size: 14px; }
+.cal-head { padding: 4px 0; }
+.cal-nav { display: flex; align-items: center; gap: 2px; }
+.cal-nav h1 { min-width: 132px; text-align: center; font-size: 21px; }
+a.mini-card { text-decoration: none; color: inherit; }
+.mini-card strong.red { color: var(--holiday); }
+
+.cal { padding: 10px 4px 8px; touch-action: pan-y; }
+.cal-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding-bottom: 6px; }
+.cal-week span { text-align: center; font-size: 12px; font-weight: 500; color: var(--muted); }
+.cal-week span.red { color: var(--holiday); }
+.cal-week span.blue { color: var(--sat); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; }
+.cal-cell {
+  min-height: 76px; min-width: 0; padding: 2px 2px 4px; border: 0; border-radius: 10px; background: transparent;
+  display: flex; flex-direction: column; align-items: stretch; gap: 2px; cursor: pointer; color: var(--ink); text-align: left;
+}
+.cal-cell.selected { background: #F1F3F8; }
+.cal-cell.other { opacity: 0.38; }
+.cal-num {
+  align-self: center; width: 26px; height: 26px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
+}
+.cal-cell.red .cal-num { color: var(--holiday); }
+.cal-cell.blue .cal-num { color: var(--sat); }
+.cal-cell.today .cal-num { background: var(--ink); color: #FFFFFF; font-weight: 700; }
+.cal-hol {
+  font-size: 10px; line-height: 14px; color: var(--holiday); text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chip-ev {
+  font-size: 10px; line-height: 15px; padding: 0 3px; border-radius: 4px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chip-more { font-size: 10px; line-height: 13px; color: var(--muted); text-align: center; }
+
+.day-panel { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.day-panel-head { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
+.day-panel-head h2 { font-size: 15px; font-weight: 700; }
+.ev-row {
+  width: 100%; border: 0; display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-align: left; cursor: pointer;
+}
+.ev-bar { width: 4px; align-self: stretch; min-height: 28px; border-radius: 2px; flex: none; }
+.ev-time { font-size: 12px; color: var(--muted); width: 82px; flex: none; }
+.ev-title { font-size: 14px; font-weight: 500; display: flex; flex-direction: column; min-width: 0; }
+.ev-note { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.fab {
+  position: fixed; right: max(20px, calc(50% - 260px)); bottom: calc(var(--tabbar-h) + var(--safe-b) + 16px);
+  width: 56px; height: 56px; border-radius: 28px; border: 0; background: var(--accent); color: #FFFFFF;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(47, 95, 208, 0.35);
+  cursor: pointer; z-index: 15;
+}
+.fab svg { width: 24px; height: 24px; }
+
+/* ── 아래에서 올라오는 창 ── */
+dialog.sheet {
+  width: min(560px, 100%); max-width: 100%; max-height: 92dvh; margin: auto auto 0; padding: 0;
+  border: 0; border-radius: 20px 20px 0 0; background: var(--surface); color: var(--ink);
+  padding-bottom: var(--safe-b); overflow: auto;
+}
+dialog.sheet::backdrop { background: rgba(20, 20, 30, 0.4); }
+dialog.sheet h2 { font-size: 18px; font-weight: 700; }
+dialog.sheet .form { padding: 20px 16px 16px; }
+.sheet-actions { display: flex; gap: 8px; align-items: center; }
+.sheet-actions .grow { flex: 1 1 auto; }
+.swatches { display: flex; gap: 10px; }
+.swatch { position: relative; width: 44px; height: 44px; cursor: pointer; }
+.swatch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.swatch span { display: block; width: 100%; height: 100%; border-radius: 22px; background: var(--sw); border: 3px solid transparent; box-sizing: border-box; }
+.swatch input:checked + span { border-color: var(--ink); box-shadow: inset 0 0 0 2px #FFFFFF; }
+.swatch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
