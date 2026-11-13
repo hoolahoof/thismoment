@@ -155,7 +155,7 @@ a.btn { text-decoration: none; }
 }
 .mode-toggle { width: 150px; margin: 0 0 2px; }
 .mode-toggle button { height: 34px; font-size: 14px; }
-.seg-inline { width: 210px; }
+.seg-inline { width: 150px; }
 .seg-inline button { height: 34px; font-size: 13px; }
 
 .token-row { display: flex; align-items: center; gap: var(--space-2); }

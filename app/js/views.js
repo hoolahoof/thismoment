@@ -327,7 +327,6 @@ const settings = {
       <section class="card stack">
         <div class="kv"><span>화면 모드</span>
           <div class="segmented seg-inline" role="radiogroup" aria-label="화면 모드" data-slot="theme">
-            <button type="button" role="radio" data-theme-set="system">시스템</button>
             <button type="button" role="radio" data-theme-set="light">라이트</button>
             <button type="button" role="radio" data-theme-set="dark">다크</button>
           </div>

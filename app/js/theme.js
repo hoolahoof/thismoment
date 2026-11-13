@@ -2,11 +2,13 @@
 const KEY = 'tm.theme';
 const META = { light: '#FFFFFF', dark: '#171A1F' };
 
+// 저장한 선택이 없으면 처음엔 기기 설정을 따르고, 화면에는 지금 적용된 쪽(라이트/다크)을 보여준다
 export function getTheme() {
   try {
     const t = localStorage.getItem(KEY);
-    return t === 'light' || t === 'dark' ? t : 'system';
-  } catch { return 'system'; }
+    if (t === 'light' || t === 'dark') return t;
+  } catch { /* 무시 */ }
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function paintMeta() {
