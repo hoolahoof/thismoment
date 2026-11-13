@@ -43,7 +43,10 @@ function showRoute() {
   if (!el) return;
   if (id !== currentId) {
     currentId = id;
-    views[id].mount(el);
+    // 화면을 바꿀 때마다 새 요소로 갈아끼워 이전 화면의 이벤트 처리기가 쌓이지 않게 한다
+    const fresh = el.cloneNode(false);
+    el.replaceWith(fresh);
+    views[id].mount(fresh);
     root.querySelectorAll('[data-tab]').forEach((a) => {
       if (a.dataset.tab === id) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');

@@ -1,15 +1,25 @@
 // 월간 캘린더: 달력 + 공휴일 표시 + 일정 칩, 날짜를 누르면 아래에 그날 일정, + 로 일정 추가/수정.
 import * as store from './store.js';
-import { holidayOn } from './holidays.js';
+import { holidayOn, customHolidayOn } from './holidays.js';
 import { esc, toISODate, parseDate, todayLocal, ddayLabel, daysUntil, icons } from './util.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
+// 일정 색 14가지 (bg: 칩·블록 배경, bar: 진한 표시색)
 export const COLORS = {
-  blue: { name: '파랑', bg: '#DCE6FF', bar: '#2F5FD0' },
+  red: { name: '빨강', bg: '#FFDADA', bar: '#D93636' },
+  coral: { name: '산호', bg: '#FFE1D6', bar: '#E8603C' },
+  orange: { name: '주황', bg: '#FFE4CC', bar: '#E07B24' },
+  amber: { name: '노랑', bg: '#FFF0BF', bar: '#C99400' },
+  lime: { name: '연두', bg: '#E8F5CC', bar: '#6FA312' },
   green: { name: '초록', bg: '#D9F2E3', bar: '#2E9E5B' },
-  orange: { name: '주황', bg: '#FFE4CC', bar: '#D9772B' },
-  red: { name: '빨강', bg: '#FFDADA', bar: '#C62828' },
+  teal: { name: '청록', bg: '#D0F2EC', bar: '#12998A' },
+  cyan: { name: '하늘', bg: '#D3EFF8', bar: '#0B8DB0' },
+  blue: { name: '파랑', bg: '#DCE6FF', bar: '#2F5FD0' },
+  indigo: { name: '남색', bg: '#E0E2FF', bar: '#4148C2' },
   purple: { name: '보라', bg: '#ECE1FF', bar: '#7A4FD6' },
+  pink: { name: '분홍', bg: '#FCDDF0', bar: '#CF3F98' },
+  brown: { name: '갈색', bg: '#EFE3D7', bar: '#8A6243' },
+  gray: { name: '회색', bg: '#E6E6E2', bar: '#5E5E66' },
 };
 const colorOf = (c) => COLORS[c] ?? COLORS.blue;
 const pad = (n) => String(n).padStart(2, '0');
@@ -76,13 +86,28 @@ export const calendar = {
         <div class="cal-grid" data-slot="grid" role="grid"></div>
       </section>
       <section class="day-panel">
-        <div class="day-panel-head"><h2 data-slot="day-title"></h2><span data-slot="day-hol" class="red small"></span></div>
+        <div class="day-panel-head">
+          <h2 data-slot="day-title"></h2><span data-slot="day-hol" class="red small"></span>
+          <span class="grow"></span>
+          <button class="btn pill" data-action="holiday" data-slot="hol-btn"></button>
+        </div>
         <ul class="list" data-slot="day-list"></ul>
       </section>
+      <p class="muted small center cal-tip">날짜를 길게 누른 채 끌면 여러 날을 한 번에 고를 수 있어요.</p>
       <button class="fab" data-action="add" aria-label="일정 추가">${icons.plus}</button>
-      ${eventDialogHTML()}`;
+      ${eventDialogHTML()}
+      ${holidayDialogHTML()}
+      <dialog class="sheet" data-slot="range-sheet" aria-labelledby="range-title">
+        <div class="form">
+          <h2 id="range-title" data-slot="range-title"></h2>
+          <button class="btn primary big" data-range="event">${icons.plus}이 기간에 일정 추가</button>
+          <button class="btn big red-btn" data-range="holiday">이 기간을 휴일로 지정 (빨간 날)</button>
+          <button class="btn" data-range="cancel">취소</button>
+        </div>
+      </dialog>`;
 
     const rerender = () => calendar.update(el, store.getState());
+    let suppressClick = false;
 
     el.querySelectorAll('[data-nav]').forEach((b) =>
       b.addEventListener('click', () => {
@@ -97,6 +122,7 @@ export const calendar = {
     );
 
     el.querySelector('[data-slot=grid]').addEventListener('click', (e) => {
+      if (suppressClick) { suppressClick = false; return; }
       const c = e.target.closest('[data-date]');
       if (!c) return;
       const iso = c.dataset.date;
@@ -109,12 +135,14 @@ export const calendar = {
       rerender();
     });
 
+    const range = { active: false, start: null, end: null, timer: null, x: 0, y: 0, type: '' };
+
     // 좌우로 밀어서 달 넘기기
     const cal = el.querySelector('[data-slot=cal]');
     let x0 = null, y0 = null;
     cal.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
     cal.addEventListener('touchend', (e) => {
-      if (x0 === null) return;
+      if (x0 === null || range.active) { x0 = null; return; }
       const dx = e.changedTouches[0].clientX - x0;
       const dy = e.changedTouches[0].clientY - y0;
       x0 = null;
@@ -125,7 +153,90 @@ export const calendar = {
     });
 
     const dialog = setupEventDialog(el);
+    const holDialog = setupHolidayDialog(el);
     el.querySelector('[data-action=add]').addEventListener('click', () => dialog.open(null, selected));
+    el.querySelector('[data-action=holiday]').addEventListener('click', () => {
+      holDialog.open(customHolidayOn(selected, store.getState()), selected, selected);
+    });
+
+    // ── 여러 날 끌어서 고르기 ──
+    // 손가락: 0.35초 길게 누른 뒤 끌기 (그냥 밀면 달 넘기기/스크롤). 마우스: 누른 채 다른 날로 끌기.
+    const grid = el.querySelector('[data-slot=grid]');
+    const cellAt = (x, y) => document.elementFromPoint(x, y)?.closest('[data-date]');
+    const paint = () => {
+      const [a, b] = [range.start, range.end].sort();
+      grid.querySelectorAll('[data-date]').forEach((c) => {
+        const iso = c.dataset.date;
+        c.classList.toggle('in-range', range.active && iso >= a && iso <= b);
+      });
+    };
+    const begin = () => {
+      range.active = true;
+      grid.classList.add('ranging');
+      if (navigator.vibrate) navigator.vibrate(15);
+      paint();
+    };
+    const reset = () => {
+      clearTimeout(range.timer);
+      range.active = false;
+      range.start = range.end = null;
+      grid.classList.remove('ranging');
+      paint();
+    };
+    grid.addEventListener('pointerdown', (e) => {
+      const c = e.target.closest('[data-date]');
+      if (!c) return;
+      range.start = range.end = c.dataset.date;
+      range.x = e.clientX; range.y = e.clientY; range.type = e.pointerType;
+      clearTimeout(range.timer);
+      if (e.pointerType !== 'mouse') range.timer = setTimeout(begin, 350);
+    });
+    grid.addEventListener('pointermove', (e) => {
+      if (!range.start) return;
+      if (!range.active) {
+        if (range.type === 'mouse') {
+          const c = cellAt(e.clientX, e.clientY);
+          if (e.buttons === 1 && c && c.dataset.date !== range.start) begin();
+          else return;
+        } else {
+          if (Math.hypot(e.clientX - range.x, e.clientY - range.y) > 10) { clearTimeout(range.timer); range.start = null; }
+          return;
+        }
+      }
+      const c = cellAt(e.clientX, e.clientY);
+      if (c && c.dataset.date !== range.end) { range.end = c.dataset.date; paint(); }
+    });
+    // 길게 누른 뒤 끄는 동안에는 화면이 스크롤되지 않게
+    grid.addEventListener('touchmove', (e) => { if (range.active) e.preventDefault(); }, { passive: false });
+    grid.addEventListener('pointerup', () => {
+      clearTimeout(range.timer);
+      if (!range.active) { range.start = null; return; }
+      const [a, b] = [range.start, range.end].sort();
+      suppressClick = true;
+      setTimeout(() => (suppressClick = false), 400);
+      reset();
+      openRange(a, b);
+    });
+    grid.addEventListener('pointercancel', reset);
+    grid.addEventListener('contextmenu', (e) => { if (range.start) e.preventDefault(); });
+
+    const sheet = el.querySelector('[data-slot=range-sheet]');
+    let picked = null;
+    function openRange(a, b) {
+      picked = [a, b];
+      const n = Math.round((parseDate(b) - parseDate(a)) / 86400000) + 1;
+      el.querySelector('[data-slot=range-title]').textContent =
+        a === b ? dayLabel(a) : `${dayLabel(a)} ~ ${dayLabel(b)} · ${n}일`;
+      sheet.showModal();
+    }
+    sheet.addEventListener('click', (e) => {
+      if (e.target === sheet) return sheet.close();
+      const b = e.target.closest('[data-range]');
+      if (!b) return;
+      sheet.close();
+      if (b.dataset.range === 'event') dialog.open(null, picked[0], null, { allDay: true, endISO: picked[1] });
+      else if (b.dataset.range === 'holiday') holDialog.open(null, picked[0], picked[1]);
+    });
     el.querySelector('[data-slot=day-list]').addEventListener('click', (e) => {
       const b = e.target.closest('[data-event]');
       if (!b) return;
@@ -187,6 +298,7 @@ export const calendar = {
     const h = holidayOn(selected, s);
     el.querySelector('[data-slot=day-title]').textContent = selected === todayISO ? `오늘 · ${dayLabel(selected)}` : dayLabel(selected);
     el.querySelector('[data-slot=day-hol]').textContent = [h.kr, h.custom].filter(Boolean).join(' · ');
+    el.querySelector('[data-slot=hol-btn]').textContent = customHolidayOn(selected, s) ? '내 휴일 수정' : '휴일로 지정';
     const list = eventsOn(selected, s.data.events);
     el.querySelector('[data-slot=day-list]').innerHTML = list.length
       ? list.map((ev) => `
@@ -252,16 +364,18 @@ export function setupEventDialog(root) {
   };
   f.namedItem('all_day').addEventListener('change', syncAllDay);
 
-  function open(ev, dateISO, startHM) {
+  function open(ev, dateISO, startHM, opts = {}) {
     editing = ev;
     msg.textContent = '';
     msg.classList.remove('error');
     dlg.querySelector('[data-slot=ev-dialog-title]').textContent = ev ? '일정 수정' : '일정 추가';
     dlg.querySelector('[data-action=delete]').hidden = !ev;
     f.namedItem('title').value = ev?.title ?? '';
-    f.namedItem('all_day').checked = ev?.all_day ?? false;
+    f.namedItem('all_day').checked = ev?.all_day ?? !!opts.allDay;
     f.namedItem('date').value = ev ? localISO(ev.starts_at) : dateISO;
-    f.namedItem('end_date').value = ev?.all_day && ev.ends_at ? localISO(ev.ends_at) : '';
+    f.namedItem('end_date').value = ev?.all_day && ev.ends_at
+      ? localISO(ev.ends_at)
+      : opts.endISO && opts.endISO !== dateISO ? opts.endISO : '';
     if (ev && !ev.all_day) {
       f.namedItem('start').value = hm(ev.starts_at);
       f.namedItem('end').value = ev.ends_at ? hm(ev.ends_at) : hm(ev.starts_at);
@@ -336,5 +450,85 @@ export function setupEventDialog(root) {
     if (e.target === dlg) dlg.close();
   });
 
+  return { open };
+}
+
+// ── 내 휴일 지정 창 (설정 화면에서도 같이 씀) ──
+export function holidayDialogHTML() {
+  return `
+  <dialog class="sheet" data-slot="hol-dialog" aria-labelledby="hol-dialog-title">
+    <form method="dialog" class="form" novalidate>
+      <h2 id="hol-dialog-title" data-slot="hol-dialog-title">휴일로 지정</h2>
+      <p class="muted small">지정한 날은 달력에서 빨간 날로 보이고, "내 휴일엔 안 울림" 알람은 울리지 않아요.</p>
+      <label>이름<input name="name" maxlength="30" required placeholder="예: 여름휴가, 창립기념일" autocomplete="off"></label>
+      <div class="form-row">
+        <label class="grow">시작<input type="date" name="start" required></label>
+        <label class="grow">끝<input type="date" name="end" required></label>
+      </div>
+      <label class="check"><input type="checkbox" name="yearly"> 매년 반복 (기념일처럼)</label>
+      <p class="form-msg" role="status"></p>
+      <div class="sheet-actions">
+        <button class="btn danger" type="button" data-action="delete" hidden>휴일 해제</button>
+        <span class="grow"></span>
+        <button class="btn" type="button" data-action="cancel">취소</button>
+        <button class="btn primary" type="submit">저장</button>
+      </div>
+    </form>
+  </dialog>`;
+}
+
+export function setupHolidayDialog(root) {
+  const dlg = root.querySelector('[data-slot=hol-dialog]');
+  const form = dlg.querySelector('form');
+  const f = form.elements;
+  const msg = form.querySelector('.form-msg');
+  let editing = null;
+  const fail = (t) => {
+    msg.textContent = t;
+    msg.classList.add('error');
+  };
+
+  function open(h, startISO, endISO) {
+    editing = h;
+    msg.textContent = '';
+    msg.classList.remove('error');
+    dlg.querySelector('[data-slot=hol-dialog-title]').textContent = h ? '내 휴일 수정' : '휴일로 지정';
+    dlg.querySelector('[data-action=delete]').hidden = !h;
+    f.namedItem('name').value = h?.name ?? '';
+    f.namedItem('start').value = h?.start_date ?? startISO;
+    f.namedItem('end').value = h?.end_date ?? endISO ?? startISO;
+    f.namedItem('yearly').checked = h?.yearly ?? false;
+    dlg.showModal();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = f.namedItem('name').value.trim() || '휴일';
+    const start = f.namedItem('start').value;
+    const end = f.namedItem('end').value || start;
+    if (!start) return fail('시작 날짜를 골라주세요.');
+    if (end < start) return fail('끝 날짜가 시작보다 빠를 수 없어요.');
+    const row = { name, start_date: start, end_date: end, yearly: f.namedItem('yearly').checked };
+    try {
+      if (editing) await store.update('custom_holidays', editing.id, row);
+      else await store.insert('custom_holidays', row);
+      dlg.close();
+    } catch (err) {
+      fail('저장하지 못했어요: ' + err.message);
+    }
+  });
+  dlg.querySelector('[data-action=cancel]').addEventListener('click', () => dlg.close());
+  dlg.querySelector('[data-action=delete]').addEventListener('click', async () => {
+    if (!editing || !confirm(`'${editing.name}' 휴일을 해제할까요?`)) return;
+    try {
+      await store.remove('custom_holidays', editing.id);
+      dlg.close();
+    } catch (err) {
+      fail('해제하지 못했어요: ' + err.message);
+    }
+  });
+  dlg.addEventListener('click', (e) => {
+    if (e.target === dlg) dlg.close();
+  });
   return { open };
 }

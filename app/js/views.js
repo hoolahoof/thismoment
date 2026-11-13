@@ -6,7 +6,7 @@ import { lockSupported, isLockEnabled, enableLock, disableLock } from './lock.js
 import { esc, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
 import { holidayOn, alarmOn, nextRing, nextSkip } from './holidays.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
-import { calendar } from './calendar.js';
+import { calendar, holidayDialogHTML, setupHolidayDialog } from './calendar.js';
 import { day } from './day.js';
 
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
@@ -279,7 +279,16 @@ const settings = {
       <section class="card stack">
         <div class="kv"><span>자동 갱신</span><span data-slot="hol-sync" class="small"></span></div>
         <div class="kv"><span>등록된 공휴일</span><span data-slot="hol-count" class="muted small"></span></div>
+        <div class="kv"><span>대한민국 공휴일 표시</span><button class="switch" data-setting="show_kr_holidays" aria-label="대한민국 공휴일 표시"><span></span></button></div>
+        <div class="kv"><span>대체공휴일 포함</span><button class="switch" data-setting="include_substitute" aria-label="대체공휴일 포함"><span></span></button></div>
+        <div class="kv"><span>선거일 · 임시공휴일 포함</span><button class="switch" data-setting="include_temporary" aria-label="선거일·임시공휴일 포함"><span></span></button></div>
       </section>
+      <div class="section-row">
+        <h2 class="section-title">내가 지정한 휴일 (빨간 날)</h2>
+        <button class="btn pill" data-action="add-holiday" type="button">+ 추가</button>
+      </div>
+      <ul class="list" data-slot="my-holidays"></ul>
+      ${holidayDialogHTML()}
       <h2 class="section-title">아이폰 시계 알람 연동</h2>
       <section class="card stack">
         <p class="muted small">단축어 "ThisMoment 알람 동기화"에 넣을 값이에요. 각각 복사해서 붙여넣으세요. 토큰은 다른 사람에게 보여주지 마세요.</p>
@@ -298,10 +307,32 @@ const settings = {
       }
     });
 
+    const holDialog = setupHolidayDialog(el);
     el.addEventListener('click', async (e) => {
+      const sw = e.target.closest('[data-setting]');
+      if (sw) {
+        const st = store.getState().data.settings[0];
+        if (!st) return;
+        const key = sw.dataset.setting;
+        try {
+          await store.update('settings', st.user_id, { [key]: !st[key] });
+        } catch (err) {
+          alert('저장하지 못했어요: ' + err.message);
+        }
+        return;
+      }
+      const hb = e.target.closest('[data-holiday]');
+      if (hb) {
+        const h = store.getState().data.custom_holidays.find((x) => x.id === hb.dataset.holiday);
+        if (h) holDialog.open(h);
+        return;
+      }
       const b = e.target.closest('[data-action]');
       if (!b) return;
-      if (b.dataset.action === 'logout') {
+      if (b.dataset.action === 'add-holiday') {
+        const t = toISODate(todayLocal());
+        holDialog.open(null, t, t);
+      } else if (b.dataset.action === 'logout') {
         if (confirm('로그아웃할까요? 다음에 다시 로그인해야 해요.')) await logout();
       } else if (b.dataset.action === 'lock') {
         const user = store.getState().user;
@@ -356,6 +387,24 @@ const settings = {
     }
     const years = [...new Set(s.holidays.map((h) => h.date.slice(0, 4)))].join(', ');
     el.querySelector('[data-slot=hol-count]').textContent = `${s.holidays.length}일${years ? ` (${years})` : ''}`;
+
+    const st = s.data.settings[0];
+    el.querySelectorAll('[data-setting]').forEach((b) => b.setAttribute('aria-pressed', String(!!st?.[b.dataset.setting])));
+
+    const mine = [...s.data.custom_holidays].sort((a, b) => a.start_date.localeCompare(b.start_date));
+    const md = (iso) => `${Number(iso.slice(5, 7))}월 ${Number(iso.slice(8, 10))}일`;
+    el.querySelector('[data-slot=my-holidays]').innerHTML = mine.length
+      ? mine.map((h) => `
+          <li>
+            <button class="card row hol-row" data-holiday="${h.id}">
+              <span class="hol-dot" aria-hidden="true"></span>
+              <span class="row-main">
+                <span class="row-title">${esc(h.name)}</span>
+                <span class="muted small">${h.yearly ? '매년 ' : `${h.start_date.slice(0, 4)}년 `}${md(h.start_date)}${h.end_date !== h.start_date ? ` – ${md(h.end_date)}` : ''}</span>
+              </span>
+            </button>
+          </li>`).join('')
+      : '<li class="empty muted">아직 없어요. 캘린더에서 날짜를 누르거나 길게 눌러 끌어서 지정할 수도 있어요.</li>';
   },
 };
 

@@ -14,10 +14,15 @@ export function holidayOn(iso, s) {
     (h.kind !== 'temporary' || st.include_temporary)
       ? h.name
       : null;
-  const c = s.data.custom_holidays.find((c) =>
-    c.yearly ? mmdd(iso) >= mmdd(c.start_date) && mmdd(iso) <= mmdd(c.end_date) : iso >= c.start_date && iso <= c.end_date
-  );
+  const c = customHolidayOn(iso, s);
   return { kr, custom: c ? c.name : null };
+}
+
+// 그 날에 해당하는 내 휴일 (없으면 null)
+export function customHolidayOn(iso, s) {
+  return s.data.custom_holidays.find((c) =>
+    c.yearly ? mmdd(iso) >= mmdd(c.start_date) && mmdd(iso) <= mmdd(c.end_date) : iso >= c.start_date && iso <= c.end_date
+  ) ?? null;
 }
 
 // 알람이 그 날 울리는지와 이유
