@@ -83,7 +83,12 @@ export async function applyEdit({ occ, fields, start, end, rule, scope }) {
   // 반복이 아니던 일정
   if (!oldRule) {
     const [s, e] = alignStart(rule, start, end);
-    return store.update('events', master.id, { ...base(s, e), recurrence: rule ? serializeRule({ ...rule, ex: [] }) : null });
+    const saved = await store.update('events', master.id, { ...base(s, e), recurrence: rule ? serializeRule({ ...rule, ex: [] }) : null });
+    // 디데이와 연결된 일정이면 디데이의 이름·날짜도 같이 바꾼다
+    if (master.dday_id) {
+      try { await store.update('ddays', master.dday_id, { title: fields.title, target_date: toISODate(s) }); } catch { /* 디데이가 이미 없으면 무시 */ }
+    }
+    return saved;
   }
 
   const occISO = occOf(occ);
@@ -116,14 +121,24 @@ export async function applyEdit({ occ, fields, start, end, rule, scope }) {
 }
 
 // ── 새 일정 ──
-export function createEvent({ fields, start, end, rule }) {
+export async function createEvent({ fields, start, end, rule, alsoDday }) {
   const [s, e] = alignStart(rule, start, end);
-  return store.insert('events', {
+  const ev = await store.insert('events', {
     ...clean(fields, false),
     starts_at: s.toISOString(),
     ends_at: e.toISOString(),
     recurrence: rule ? serializeRule({ ...rule, ex: [] }) : null,
   });
+  // '디데이로도 등록': 같은 이름·날짜의 디데이를 만들어 서로 연결한다
+  if (alsoDday) {
+    try {
+      const d = await store.insert('ddays', { title: fields.title, target_date: toISODate(s), count_up: false });
+      await store.update('events', ev.id, { dday_id: d.id });
+    } catch (err) {
+      throw new Error('일정은 저장했지만 디데이 연결에 실패했어요: ' + err.message + ' (SQL 014 를 실행했는지 확인해 주세요)');
+    }
+  }
+  return ev;
 }
 
 // ── 삭제 ──
@@ -131,6 +146,12 @@ export async function deleteEvent({ occ, scope }) {
   const master = masterOf(occ);
   if (!master) return;
   const oldRule = parseRule(master.recurrence);
+  if (master.dday_id) {
+    // 디데이와 연결된 일정을 지우면 디데이도 같이 지운다
+    await store.remove('events', master.id);
+    try { await store.remove('ddays', master.dday_id); } catch { /* 이미 없으면 무시 */ }
+    return;
+  }
   if (!oldRule || scope === 'all') return store.remove('events', master.id);
   const occISO = occOf(occ);
   if (scope === 'one') {
