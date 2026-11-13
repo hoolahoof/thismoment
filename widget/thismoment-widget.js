@@ -146,15 +146,15 @@ function ddayCard(parent, d, big) {
   row.centerAlignContent();
   const bar = row.addStack();
   bar.backgroundColor = near ? C.danger : C.accent;
-  bar.size = new Size(3, big ? 58 : 50);
+  bar.size = new Size(4, big ? 74 : 62);
   bar.cornerRadius = 1.5;
   row.addSpacer(9);
   const col = row.addStack();
   col.layoutVertically();
-  put(col, d.title, 12, C.muted, 'medium');
-  put(col, ddayLabel(d), big ? 36 : 30, near ? C.danger : C.text, 'bold');
+  put(col, d.title, big ? 14 : 13, C.muted, 'medium');
+  put(col, ddayLabel(d), big ? 46 : 38, near ? C.danger : C.text, 'bold');
   const dt = parse(d.date);
-  put(col, `${dt.getMonth() + 1}.${dt.getDate()} (${WD[dt.getDay()]})`, 10, C.muted);
+  put(col, `${dt.getMonth() + 1}.${dt.getDate()} (${WD[dt.getDay()]})`, 11, C.muted);
   return row;
 }
 
@@ -172,7 +172,7 @@ function evLine(parent, e, size) {
 function build(data) {
   const w = new ListWidget();
   w.backgroundColor = C.bg;
-  w.setPadding(14, 16, 14, 16);
+  w.setPadding(16, 18, 16, 18);
   const small = config.widgetFamily === 'small';
   const now = new Date();
   const today = data.today || iso(now);
@@ -186,14 +186,15 @@ function build(data) {
   // 머리글: 오늘 날짜 (휴일이면 빨간 이름을 옆에)
   const head = w.addStack();
   head.centerAlignContent();
-  put(head, `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}`, 14, holName ? C.danger : C.text, 'bold');
+  put(head, `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}`, 16, holName ? C.danger : C.text, 'bold');
   if (holName && !small) {
     head.addSpacer(8);
     put(head, holName, 11, C.danger, 'medium');
   }
   head.addSpacer();
-  if (holName && small) put(w, holName, 10, C.danger, 'medium');
-  w.addSpacer(10);
+  if (holName && small) put(w, holName, 11, C.danger, 'medium');
+  if (small) w.addSpacer();
+  else w.addSpacer(12);
 
   // 디데이: 다가오는 것 먼저, 그 다음 지난 것/기념일
   const all = data.ddays || [];
@@ -201,12 +202,12 @@ function build(data) {
 
   if (small) {
     if (dd.length) ddayCard(w, dd[0], true);
-    else put(w, '디데이 없음', 12, C.muted);
+    else put(w, '디데이 없음', 13, C.muted);
     w.addSpacer();
     rule(w, false);
-    w.addSpacer(7);
-    if (normal.length) evLine(w, normal[0], 12);
-    else put(w, '오늘 일정 없음', 12, C.muted);
+    w.addSpacer(8);
+    if (normal.length) evLine(w, normal[0], 13);
+    else put(w, '오늘 일정 없음', 13, C.muted);
   } else {
     const body = w.addStack();
     body.topAlignContent();
@@ -214,7 +215,7 @@ function build(data) {
     left.layoutVertically();
     if (!dd.length) put(left, '디데이 없음', 12, C.muted);
     dd.forEach((d, i) => {
-      if (i) left.addSpacer(10);
+      if (i) left.addSpacer(12);
       ddayCard(left, d, false);
     });
     body.addSpacer(14);
@@ -222,14 +223,14 @@ function build(data) {
     body.addSpacer(14);
     const right = body.addStack();
     right.layoutVertically();
-    put(right, '오늘 일정', 11, C.muted, 'bold');
-    right.addSpacer(5);
-    if (!normal.length) put(right, '일정 없음', 12, C.muted);
-    normal.slice(0, 3).forEach((e) => {
-      evLine(right, e, 12);
-      right.addSpacer(4);
+    put(right, '오늘 일정', 12, C.muted, 'bold');
+    right.addSpacer(7);
+    if (!normal.length) put(right, '일정 없음', 14, C.muted);
+    normal.slice(0, 4).forEach((e) => {
+      evLine(right, e, 14);
+      right.addSpacer(7);
     });
-    if (normal.length > 3) put(right, `+${normal.length - 3}개 더`, 10, C.muted);
+    if (normal.length > 4) put(right, `+${normal.length - 4}개 더`, 11, C.muted);
     right.addSpacer();
     body.addSpacer();
   }
