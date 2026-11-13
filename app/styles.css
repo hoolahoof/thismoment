@@ -376,3 +376,95 @@ dialog.sheet .form { padding: 20px 16px 16px; }
 .section-row .section-title { margin: 0 8px; }
 .hol-row { width: 100%; border: 0; text-align: left; cursor: pointer; padding: 12px 16px; }
 .hol-dot { width: 10px; height: 10px; border-radius: 5px; background: var(--holiday); flex: none; }
+
+/* ── 반복 일정 · 끌기 · 검색 · 주간 보기 ── */
+.form select {
+  height: 46px; padding: 0 12px; border: 1px solid #D5D5CF; border-radius: 12px; background: #FFFFFF;
+  font-size: 16px; color: var(--ink);
+}
+.repeat-box { background: #F6F6F3; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.repeat-summary { margin: 0; font-size: 13px; font-weight: 500; color: var(--accent); }
+.rep-ico { width: 11px; height: 11px; margin-left: 4px; vertical-align: -1px; opacity: 0.65; flex: none; }
+
+.cal-head { flex-wrap: wrap; gap: 4px; }
+.cal-nav .icon-btn { width: 36px; }
+.cal-nav h1 { font-size: 19px; min-width: 0; }
+.cal-tools { display: flex; align-items: center; gap: 4px; }
+.mode-toggle { width: 150px; margin: 0 0 2px; }
+.mode-toggle button { height: 34px; font-size: 14px; }
+
+.block { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.block.dragging { overflow: visible; z-index: 5; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); }
+.block.dragging::after {
+  content: attr(data-time); position: absolute; left: 0; top: -28px; background: var(--ink); color: #FFFFFF;
+  font-size: 12px; padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+}
+.block-grip { position: absolute; left: 0; right: 0; bottom: 0; height: 16px; cursor: ns-resize; }
+.block-grip::before {
+  content: ''; position: absolute; left: 50%; bottom: 4px; width: 28px; height: 4px; margin-left: -14px;
+  border-radius: 2px; background: rgba(0, 0, 0, 0.28);
+}
+.block-grip.small { height: 10px; }
+.block-grip.small::before { bottom: 2px; height: 3px; }
+.timeline.dragging-any { cursor: grabbing; }
+
+.chip-ev { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.cal-cell.drop-target { outline: 2px solid var(--accent); outline-offset: -2px; background: #EAF0FF; border-radius: 10px; }
+.drag-ghost {
+  position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; padding: 4px 10px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: var(--ink); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  max-width: 60vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+dialog.sheet.tall { height: 92dvh; }
+.srch { height: 100%; }
+.srch-bar { display: flex; gap: 8px; }
+.srch-bar input {
+  flex: 1 1 auto; min-width: 0; height: 46px; border: 1px solid #D5D5CF; border-radius: 12px; padding: 0 12px;
+  font-size: 16px; background: #FFFFFF; color: var(--ink);
+}
+.srch-row { width: 100%; border: 0; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.srch-row.past { opacity: 0.65; }
+.srch-date { flex: none; width: 98px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; }
+.srch-main { min-width: 0; display: flex; flex-direction: column; }
+.srch-main .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wk-card { padding: 0 0 8px; }
+.wk-head, .wk-allday { display: grid; grid-template-columns: 34px repeat(7, minmax(0, 1fr)); }
+.wk-head { position: sticky; top: 0; z-index: 3; background: var(--surface); border-bottom: 1px solid #ECECE6; border-radius: 16px 16px 0 0; padding-top: 6px; }
+.wk-day {
+  border: 0; background: transparent; padding: 2px 0 6px; min-height: 56px; display: flex; flex-direction: column;
+  align-items: center; gap: 1px; cursor: pointer; color: var(--ink);
+}
+.wk-day.red { color: var(--holiday); }
+.wk-day.blue { color: var(--sat); }
+.wk-day.sel .wk-w { text-decoration: underline; text-underline-offset: 3px; }
+.wk-w { font-size: 11px; }
+.wk-n { width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
+.wk-n.today { background: var(--ink); color: #FFFFFF; }
+.wk-hol { max-width: 100%; font-size: 9px; line-height: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-allday { padding: 4px 0; border-bottom: 1px solid #ECECE6; }
+.wk-allcol { display: flex; flex-direction: column; gap: 2px; padding: 0 1px; min-width: 0; }
+.wk-chip {
+  border: 0; border-radius: 4px; padding: 0 3px; font-size: 9px; line-height: 14px; text-align: left; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+}
+.wk-body { position: relative; margin-left: 34px; }
+.wk-hour { position: absolute; left: 0; right: 0; border-top: 1px solid #ECECE6; }
+.wk-hour:first-child { border-top-color: transparent; }
+.wk-hour span { position: absolute; left: -34px; width: 30px; top: -7px; text-align: right; font-size: 10px; color: var(--muted); }
+.wk-cols { position: absolute; inset: 0; }
+.wk-col { position: absolute; top: 0; bottom: 0; border-left: 1px solid #F0F0EA; cursor: copy; }
+.wk-col.is-holiday { background: #FFF6F5; }
+.wk-col.is-sel { background-image: linear-gradient(rgba(47, 95, 208, 0.05), rgba(47, 95, 208, 0.05)); }
+.wk-block {
+  position: absolute; box-sizing: border-box; border: 0; border-left: 3px solid; border-radius: 4px; padding: 1px 3px;
+  text-align: left; overflow: hidden; font-size: 10px; line-height: 12px; font-weight: 500; color: var(--ink); cursor: pointer;
+}
+.wk-block span { display: block; overflow: hidden; word-break: break-all; }
+.wk-block .rep-ico { width: 8px; height: 8px; margin-left: 2px; }
+.wk-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--holiday); pointer-events: none; z-index: 2; }
+.form input[type='number'] {
+  height: 46px; padding: 0 12px; border: 1px solid #D5D5CF; border-radius: 12px; background: #FFFFFF;
+  font-size: 16px; color: var(--ink); width: 100%;
+}

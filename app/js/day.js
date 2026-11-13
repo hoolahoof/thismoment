@@ -1,51 +1,20 @@
 // 하루 타임블록: 이번 주 날짜 줄 + 시간대별 블록 + 현재 시각 선 + 그날 할 일.
+// 블록을 길게 눌러(마우스는 그냥) 끌면 시간이 옮겨지고, 아래쪽 손잡이를 끌면 길이가 바뀐다 (15분 단위).
 import * as store from './store.js';
 import { holidayOn } from './holidays.js';
 import { esc, toISODate, parseDate, todayLocal, icons } from './util.js';
-import { COLORS, eventsOn, eventTime, getSelected, setSelected, eventDialogHTML, setupEventDialog } from './calendar.js';
+import { eventsOn, eventTime, localISO } from './recur.js';
+import { colorOf, REPEAT_ICON } from './colors.js';
+import { getSelected, setSelected, eventDialogHTML, setupEventDialog } from './calendar.js';
+import { findOccurrence, moveEvent } from './events.js';
+import { spanIn, layout, minutesOf } from './timeline.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const HOUR_H = 52; // 1시간 높이(px)
+const SNAP = 15; // 분
+const HOLD_MS = 350;
 const pad = (n) => String(n).padStart(2, '0');
-const colorOf = (c) => COLORS[c] ?? COLORS.blue;
-const minutesOf = (d) => d.getHours() * 60 + d.getMinutes();
-
-// 그날 안에서의 시작/끝 분 (자정을 넘는 일정은 그날 범위로 자른다)
-function spanIn(ev, iso) {
-  const day0 = parseDate(iso);
-  const day1 = new Date(day0.getFullYear(), day0.getMonth(), day0.getDate() + 1);
-  const s = new Date(ev.starts_at);
-  const e = ev.ends_at ? new Date(ev.ends_at) : new Date(s.getTime() + 30 * 60000);
-  const start = s < day0 ? 0 : minutesOf(s);
-  const end = e >= day1 ? 1440 : minutesOf(e);
-  return { start, end: Math.max(end, start + 15) };
-}
-
-// 겹치는 일정은 나란히 놓는다
-function layout(items) {
-  items.sort((a, b) => a.start - b.start || b.end - a.end);
-  const out = [];
-  let cluster = [];
-  let clusterEnd = -1;
-  const flush = () => {
-    const cols = [];
-    for (const it of cluster) {
-      let c = cols.findIndex((end) => end <= it.start);
-      if (c === -1) { c = cols.length; cols.push(0); }
-      cols[c] = it.end;
-      it.col = c;
-    }
-    cluster.forEach((it) => { it.cols = cols.length; out.push(it); });
-    cluster = [];
-  };
-  for (const it of items) {
-    if (cluster.length && it.start >= clusterEnd) flush();
-    cluster.push(it);
-    clusterEnd = Math.max(clusterEnd, it.end);
-  }
-  if (cluster.length) flush();
-  return out;
-}
+const hhmm = (m) => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
 
 let nowTimer = null;
 
@@ -73,6 +42,7 @@ export const day = {
           <div class="now-line" data-slot="now" hidden><span></span></div>
         </div>
       </section>
+      <p class="muted small center cal-tip">일정을 길게 눌러 끌면 시간을 옮기고, 아래 손잡이를 끌면 길이를 바꿔요.</p>
 
       <h2 class="section-title">할 일</h2>
       <form class="card todo-add" data-slot="todo-form">
@@ -86,6 +56,7 @@ export const day = {
 
     const rerender = () => day.update(el, store.getState());
     const dialog = setupEventDialog(el);
+    const timeline = el.querySelector('[data-slot=timeline]');
 
     el.querySelectorAll('[data-week]').forEach((b) =>
       b.addEventListener('click', () => {
@@ -102,22 +73,138 @@ export const day = {
       rerender();
     });
 
-    // 빈 시간대를 누르면 그 시각(30분 단위)으로 일정 추가
-    el.querySelector('[data-slot=timeline]').addEventListener('click', (e) => {
+    // ── 블록 끌기 ──
+    let drag = null;
+    let suppressClick = false;
+    const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+    const offsetY = (clientY) => clientY - timeline.getBoundingClientRect().top;
+
+    function applyDrag(clientY) {
+      const dMin = Math.round(((offsetY(clientY) - drag.startOff) / HOUR_H) * 60 / SNAP) * SNAP;
+      let s = drag.orig.start;
+      let e = drag.orig.end;
+      if (drag.mode === 'move') {
+        const dur = e - s;
+        s = clamp(s + dMin, 0, 1440 - dur);
+        e = s + dur;
+      } else {
+        e = clamp(e + dMin, s + SNAP, 1440);
+      }
+      drag.cur = { start: s, end: e };
+      const b = drag.block;
+      b.style.top = `${(s / 60) * HOUR_H}px`;
+      b.style.height = `${Math.max(((e - s) / 60) * HOUR_H - 2, 22)}px`;
+      b.dataset.time = `${hhmm(s)} – ${e === 1440 ? '24:00' : hhmm(e)}`;
+    }
+
+    function stopDrag() {
+      clearTimeout(drag?.timer);
+      clearInterval(drag?.tick);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      drag?.block.classList.remove('dragging');
+      timeline.classList.remove('dragging-any');
+      drag = null;
+    }
+
+    function activate() {
+      if (!drag || drag.active) return;
+      drag.active = true;
+      drag.block.classList.add('dragging');
+      timeline.classList.add('dragging-any');
+      if (navigator.vibrate) navigator.vibrate(15);
+      applyDrag(drag.lastY);
+      // 화면 가장자리에서 끌면 자동으로 스크롤
+      drag.tick = setInterval(() => {
+        if (!drag) return;
+        if (drag.lastY < 90) window.scrollBy(0, -12);
+        else if (drag.lastY > window.innerHeight - 120) window.scrollBy(0, 12);
+        applyDrag(drag.lastY);
+      }, 30);
+    }
+
+    function onMove(e) {
+      if (!drag) return;
+      drag.lastY = e.clientY;
+      if (!drag.active) {
+        const moved = Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0);
+        if (drag.type === 'mouse') {
+          if (moved > 4) activate();
+        } else if (moved > 10) {
+          // 길게 누르기 전에 움직이면 스크롤로 본다
+          stopDrag();
+        }
+        return;
+      }
+      applyDrag(e.clientY);
+    }
+
+    async function onUp() {
+      if (!drag) return;
+      const d = drag;
+      if (!d.active) return stopDrag();
+      suppressClick = true;
+      setTimeout(() => (suppressClick = false), 400);
+      const changed = d.cur && (d.cur.start !== d.orig.start || d.cur.end !== d.orig.end);
+      const { cur, occ } = d;
+      stopDrag();
+      if (!changed) return rerender();
+      const dayStart = parseDate(getSelected());
+      const at = (m) => new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate(), 0, m);
+      try {
+        const ok = await moveEvent(occ, at(cur.start), at(cur.end));
+        if (!ok) rerender();
+      } catch (err) {
+        alert('저장하지 못했어요: ' + err.message);
+        rerender();
+      }
+    }
+    const onCancel = () => {
+      if (drag?.active) rerender();
+      stopDrag();
+    };
+
+    timeline.addEventListener('pointerdown', (e) => {
+      const block = e.target.closest('.block');
+      if (!block || drag) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      const occ = findOccurrence(block.dataset.event, block.dataset.occ);
+      if (!occ || !block.dataset.single) return; // 자정을 넘는 일정은 끌지 않고 눌러서 수정
+      const isGrip = !!e.target.closest('.block-grip');
+      const s = spanIn(occ, getSelected());
+      drag = {
+        block, occ, mode: isGrip ? 'resize' : 'move', type: e.pointerType, active: false,
+        orig: { start: s.start, end: s.end }, cur: null,
+        startOff: offsetY(e.clientY), x0: e.clientX, y0: e.clientY, lastY: e.clientY,
+        timer: null, tick: null,
+      };
+      if (e.pointerType !== 'mouse') drag.timer = setTimeout(activate, HOLD_MS);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onCancel);
+    });
+    // 끄는 동안에는 화면이 스크롤되지 않게
+    timeline.addEventListener('touchmove', (e) => { if (drag?.active) e.preventDefault(); }, { passive: false });
+    timeline.addEventListener('contextmenu', (e) => { if (drag) e.preventDefault(); });
+
+    // 빈 시간대를 누르면 그 시각(30분 단위)으로 일정 추가, 블록을 누르면 수정
+    timeline.addEventListener('click', (e) => {
+      if (suppressClick) { suppressClick = false; return; }
       const blk = e.target.closest('[data-event]');
       if (blk) {
-        const ev = store.getState().data.events.find((x) => x.id === blk.dataset.event);
+        const ev = findOccurrence(blk.dataset.event, blk.dataset.occ);
         if (ev) dialog.open(ev);
         return;
       }
-      const rect = e.currentTarget.getBoundingClientRect();
+      const rect = timeline.getBoundingClientRect();
       const mins = Math.floor(((e.clientY - rect.top) / HOUR_H) * 2) * 30;
-      const h = Math.min(Math.max(Math.floor(mins / 60), 0), 23);
+      const h = clamp(Math.floor(mins / 60), 0, 23);
       dialog.open(null, getSelected(), `${pad(h)}:${pad(mins % 60)}`);
     });
     el.querySelector('[data-slot=allday]').addEventListener('click', (e) => {
       const b = e.target.closest('[data-event]');
-      const ev = b && store.getState().data.events.find((x) => x.id === b.dataset.event);
+      const ev = b && findOccurrence(b.dataset.event, b.dataset.occ);
       if (ev) dialog.open(ev);
     });
     el.querySelector('[data-action=add]').addEventListener('click', () => dialog.open(null, getSelected()));
@@ -161,8 +248,7 @@ export const day = {
     requestAnimationFrame(() => {
       const isToday = getSelected() === toISODate(todayLocal());
       const h = isToday ? Math.max(new Date().getHours() - 1, 0) : 8;
-      const tl = el.querySelector('[data-slot=timeline]');
-      window.scrollTo({ top: tl.getBoundingClientRect().top + window.scrollY + h * HOUR_H - 120 });
+      window.scrollTo({ top: timeline.getBoundingClientRect().top + window.scrollY + h * HOUR_H - 120 });
     });
   },
 
@@ -197,23 +283,27 @@ export const day = {
 
     // 하루 종일 일정
     const evs = eventsOn(iso, s.data.events);
-    const allDay = evs.filter((ev) => ev.all_day);
-    el.querySelector('[data-slot=allday]').innerHTML = allDay
-      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" style="background:${colorOf(ev.color).bg}">하루 종일 · ${esc(ev.title)}</button>`)
+    el.querySelector('[data-slot=allday]').innerHTML = evs
+      .filter((ev) => ev.all_day)
+      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">하루 종일 · ${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</button>`)
       .join('');
 
     // 시간 블록
+    const dayEnd = new Date(sel.getFullYear(), sel.getMonth(), sel.getDate() + 1);
     const items = layout(evs.filter((ev) => !ev.all_day).map((ev) => ({ ev, ...spanIn(ev, iso) })));
     el.querySelector('[data-slot=blocks]').innerHTML = items.map((it) => {
       const top = (it.start / 60) * HOUR_H;
       const height = Math.max(((it.end - it.start) / 60) * HOUR_H - 2, 22);
       const w = 100 / it.cols;
       const c = colorOf(it.ev.color);
+      // 오늘 하루 안에서 시작하고 끝나는 일정만 끌 수 있다
+      const single = localISO(it.ev.starts_at) === iso && (!it.ev.ends_at || new Date(it.ev.ends_at) <= dayEnd);
       return `
-        <button class="block" data-event="${it.ev.id}"
+        <button class="block" data-event="${it.ev.id}" data-occ="${it.ev._occ}" ${single ? 'data-single="1"' : ''}
           style="top:${top}px;height:${height}px;left:calc(${it.col * w}% + 2px);width:calc(${w}% - 4px);background:${c.bg};border-left-color:${c.bar}">
-          <span class="block-title">${esc(it.ev.title)}</span>
+          <span class="block-title">${esc(it.ev.title)}${it.ev.recurrence ? REPEAT_ICON : ''}</span>
           ${height >= 38 ? `<span class="block-time">${eventTime(it.ev)}</span>` : ''}
+          ${single ? `<span class="block-grip${height < 40 ? ' small' : ''}" aria-hidden="true"></span>` : ''}
         </button>`;
     }).join('');
 

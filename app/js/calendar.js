@@ -2,47 +2,19 @@
 import * as store from './store.js';
 import { holidayOn, customHolidayOn } from './holidays.js';
 import { esc, toISODate, parseDate, todayLocal, ddayLabel, daysUntil, icons } from './util.js';
+import { localISO, eventsOn, parseRule, sameRule, describeRule, hm, eventTime, daysBetween, addDays } from './recur.js';
+import { COLORS, colorOf, REPEAT_ICON } from './colors.js';
+import { weekView, weekTitle } from './week.js';
+import { setupSearch, searchDialogHTML, searchIcon } from './search.js';
+import { applyEdit, createEvent, deleteEvent, askScope, scopeOptions, findOccurrence, moveEvent } from './events.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
-// 일정 색 14가지 (bg: 칩·블록 배경, bar: 진한 표시색)
-export const COLORS = {
-  red: { name: '빨강', bg: '#FFDADA', bar: '#D93636' },
-  coral: { name: '산호', bg: '#FFE1D6', bar: '#E8603C' },
-  orange: { name: '주황', bg: '#FFE4CC', bar: '#E07B24' },
-  amber: { name: '노랑', bg: '#FFF0BF', bar: '#C99400' },
-  lime: { name: '연두', bg: '#E8F5CC', bar: '#6FA312' },
-  green: { name: '초록', bg: '#D9F2E3', bar: '#2E9E5B' },
-  teal: { name: '청록', bg: '#D0F2EC', bar: '#12998A' },
-  cyan: { name: '하늘', bg: '#D3EFF8', bar: '#0B8DB0' },
-  blue: { name: '파랑', bg: '#DCE6FF', bar: '#2F5FD0' },
-  indigo: { name: '남색', bg: '#E0E2FF', bar: '#4148C2' },
-  purple: { name: '보라', bg: '#ECE1FF', bar: '#7A4FD6' },
-  pink: { name: '분홍', bg: '#FCDDF0', bar: '#CF3F98' },
-  brown: { name: '갈색', bg: '#EFE3D7', bar: '#8A6243' },
-  gray: { name: '회색', bg: '#E6E6E2', bar: '#5E5E66' },
-};
-const colorOf = (c) => COLORS[c] ?? COLORS.blue;
 const pad = (n) => String(n).padStart(2, '0');
+export { COLORS, REPEAT_ICON };
 
-// ── 일정 날짜 계산 ──
-export const localISO = (ts) => toISODate(new Date(ts));
-export const hm = (ts) => {
-  const d = new Date(ts);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
-function endISO(ev) {
-  if (!ev.ends_at) return localISO(ev.starts_at);
-  // 시간 일정이 자정에 끝나면 전날까지로 본다
-  const e = new Date(ev.ends_at);
-  if (!ev.all_day && e.getHours() === 0 && e.getMinutes() === 0 && new Date(ev.starts_at) < e) e.setDate(e.getDate() - 1);
-  return toISODate(e);
-}
-export function eventsOn(iso, events) {
-  return events
-    .filter((ev) => localISO(ev.starts_at) <= iso && iso <= endISO(ev))
-    .sort((a, b) => (b.all_day - a.all_day) || a.starts_at.localeCompare(b.starts_at));
-}
-export const eventTime = (ev) => (ev.all_day ? '하루 종일' : `${hm(ev.starts_at)}–${ev.ends_at ? hm(ev.ends_at) : ''}`);
+// ── 일정 날짜 계산 (반복 일정 포함: recur.js) ──
+export { localISO, eventsOn };
+export { hm, eventTime, findOccurrence };
 
 const dayLabel = (iso) => {
   const d = parseDate(iso);
@@ -54,6 +26,7 @@ const today = todayLocal();
 let viewY = today.getFullYear();
 let viewM = today.getMonth();
 let selected = toISODate(today);
+let mode = 'month'; // 'month' | 'week'
 // 하루 화면과 선택 날짜를 같이 쓴다
 export const getSelected = () => selected;
 export function setSelected(iso) {
@@ -78,14 +51,22 @@ export const calendar = {
           <h1 data-slot="title"></h1>
           <button class="icon-btn" data-nav="1" aria-label="다음 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
         </div>
-        <button class="btn pill" data-nav="today">오늘</button>
+        <div class="cal-tools">
+          <button class="icon-btn" data-action="search" aria-label="일정 검색">${searchIcon}</button>
+          <button class="btn pill" data-nav="today">오늘</button>
+        </div>
       </header>
+      <div class="segmented mode-toggle" role="tablist" aria-label="보기 방식">
+        <button role="tab" data-mode="month" aria-selected="true">월간</button>
+        <button role="tab" data-mode="week" aria-selected="false">주간</button>
+      </div>
       <div class="dday-strip" data-slot="strip"></div>
       <section class="card cal" data-slot="cal">
         <div class="cal-week">${WD.map((w, i) => `<span class="${i === 0 ? 'red' : i === 6 ? 'blue' : ''}">${w}</span>`).join('')}</div>
         <div class="cal-grid" data-slot="grid" role="grid"></div>
       </section>
-      <section class="day-panel">
+      <section class="card wk-card" data-slot="week-view" hidden></section>
+      <section class="day-panel" data-slot="day-panel">
         <div class="day-panel-head">
           <h2 data-slot="day-title"></h2><span data-slot="day-hol" class="red small"></span>
           <span class="grow"></span>
@@ -93,10 +74,11 @@ export const calendar = {
         </div>
         <ul class="list" data-slot="day-list"></ul>
       </section>
-      <p class="muted small center cal-tip">날짜를 길게 누른 채 끌면 여러 날을 한 번에 고를 수 있어요.</p>
+      <p class="muted small center cal-tip" data-slot="tip">날짜를 길게 누른 채 끌면 여러 날을 고르고, 일정을 길게 눌러 끌면 다른 날로 옮겨요.</p>
       <button class="fab" data-action="add" aria-label="일정 추가">${icons.plus}</button>
       ${eventDialogHTML()}
       ${holidayDialogHTML()}
+      ${searchDialogHTML()}
       <dialog class="sheet" data-slot="range-sheet" aria-labelledby="range-title">
         <div class="form">
           <h2 id="range-title" data-slot="range-title"></h2>
@@ -109,6 +91,11 @@ export const calendar = {
     const rerender = () => calendar.update(el, store.getState());
     let suppressClick = false;
 
+    const shift = (delta) => {
+      if (mode === 'week') setSelected(addDays(selected, 7 * delta));
+      else shiftMonth(delta);
+      rerender();
+    };
     el.querySelectorAll('[data-nav]').forEach((b) =>
       b.addEventListener('click', () => {
         const v = b.dataset.nav;
@@ -116,8 +103,16 @@ export const calendar = {
           viewY = today.getFullYear();
           viewM = today.getMonth();
           selected = toISODate(today);
-        } else shiftMonth(Number(v));
+          rerender();
+        } else shift(Number(v));
+      })
+    );
+    el.querySelectorAll('[data-mode]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (mode === b.dataset.mode) return;
+        mode = b.dataset.mode;
         rerender();
+        if (mode === 'week') requestAnimationFrame(() => weekView.scrollToMorning(el.querySelector('[data-slot=week-view]')));
       })
     );
 
@@ -135,25 +130,40 @@ export const calendar = {
       rerender();
     });
 
-    const range = { active: false, start: null, end: null, timer: null, x: 0, y: 0, type: '' };
+    const range = { active: false, start: null, end: null, timer: null, x: 0, y: 0, type: '', chip: null };
 
-    // 좌우로 밀어서 달 넘기기
-    const cal = el.querySelector('[data-slot=cal]');
+    // 좌우로 밀어서 달(주간은 주) 넘기기
     let x0 = null, y0 = null;
-    cal.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
-    cal.addEventListener('touchend', (e) => {
-      if (x0 === null || range.active) { x0 = null; return; }
-      const dx = e.changedTouches[0].clientX - x0;
-      const dy = e.changedTouches[0].clientY - y0;
-      x0 = null;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        shiftMonth(dx < 0 ? 1 : -1);
-        rerender();
-      }
-    });
+    for (const area of [el.querySelector('[data-slot=cal]'), el.querySelector('[data-slot=week-view]')]) {
+      area.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+      area.addEventListener('touchend', (e) => {
+        if (x0 === null || range.active) { x0 = null; return; }
+        const dx = e.changedTouches[0].clientX - x0;
+        const dy = e.changedTouches[0].clientY - y0;
+        x0 = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) shift(dx < 0 ? 1 : -1);
+      });
+    }
 
     const dialog = setupEventDialog(el);
     const holDialog = setupHolidayDialog(el);
+
+    // 검색 / 주간 보기
+    const search = setupSearch(el, {
+      onPick: (iso) => {
+        setSelected(iso);
+        rerender();
+        window.scrollTo({ top: 0 });
+      },
+    });
+    el.querySelector('[data-action=search]').addEventListener('click', () => search.open());
+    el._weekCtx = {
+      getSelected: () => selected,
+      setSelected,
+      open: (ev, dateISO, startHM) => dialog.open(ev, dateISO, startHM),
+      goDay: () => { location.hash = '#/day'; },
+    };
+    weekView.mount(el.querySelector('[data-slot=week-view]'), el._weekCtx);
     el.querySelector('[data-action=add]').addEventListener('click', () => dialog.open(null, selected));
     el.querySelector('[data-action=holiday]').addEventListener('click', () => {
       holDialog.open(customHolidayOn(selected, store.getState()), selected, selected);
@@ -163,23 +173,39 @@ export const calendar = {
     // 손가락: 0.35초 길게 누른 뒤 끌기 (그냥 밀면 달 넘기기/스크롤). 마우스: 누른 채 다른 날로 끌기.
     const grid = el.querySelector('[data-slot=grid]');
     const cellAt = (x, y) => document.elementFromPoint(x, y)?.closest('[data-date]');
+    let ghost = null;
     const paint = () => {
       const [a, b] = [range.start, range.end].sort();
       grid.querySelectorAll('[data-date]').forEach((c) => {
         const iso = c.dataset.date;
-        c.classList.toggle('in-range', range.active && iso >= a && iso <= b);
+        c.classList.toggle('in-range', range.active && !range.chip && iso >= a && iso <= b);
+        c.classList.toggle('drop-target', range.active && !!range.chip && iso === range.end);
       });
     };
     const begin = () => {
       range.active = true;
       grid.classList.add('ranging');
       if (navigator.vibrate) navigator.vibrate(15);
+      if (range.chip) {
+        ghost = document.createElement('div');
+        ghost.className = 'drag-ghost';
+        ghost.textContent = range.chip.title;
+        ghost.style.background = range.chip.bg;
+        document.body.appendChild(ghost);
+        moveGhost(range.x, range.y);
+      }
       paint();
+    };
+    const moveGhost = (x, y) => {
+      if (ghost) ghost.style.transform = `translate(${x + 12}px, ${y - 36}px)`;
     };
     const reset = () => {
       clearTimeout(range.timer);
       range.active = false;
       range.start = range.end = null;
+      range.chip = null;
+      ghost?.remove();
+      ghost = null;
       grid.classList.remove('ranging');
       paint();
     };
@@ -188,6 +214,10 @@ export const calendar = {
       if (!c) return;
       range.start = range.end = c.dataset.date;
       range.x = e.clientX; range.y = e.clientY; range.type = e.pointerType;
+      const chip = e.target.closest('.chip-ev');
+      range.chip = chip
+        ? { id: chip.dataset.event, occ: chip.dataset.occ, title: chip.textContent, bg: chip.style.background }
+        : null;
       clearTimeout(range.timer);
       if (e.pointerType !== 'mouse') range.timer = setTimeout(begin, 350);
     });
@@ -203,6 +233,7 @@ export const calendar = {
           return;
         }
       }
+      moveGhost(e.clientX, e.clientY);
       const c = cellAt(e.clientX, e.clientY);
       if (c && c.dataset.date !== range.end) { range.end = c.dataset.date; paint(); }
     });
@@ -212,11 +243,35 @@ export const calendar = {
       clearTimeout(range.timer);
       if (!range.active) { range.start = null; return; }
       const [a, b] = [range.start, range.end].sort();
+      const chip = range.chip;
+      const grab = range.start;
+      const target = range.end;
       suppressClick = true;
       setTimeout(() => (suppressClick = false), 400);
       reset();
-      openRange(a, b);
+      if (chip) {
+        if (target && target !== grab) moveToDate(chip, grab, target);
+      } else openRange(a, b);
     });
+
+    // 칩을 끌어 놓은 날로 일정 옮기기 (시간은 그대로, 여러 날 일정은 같이 밀림)
+    async function moveToDate(chip, grabISO, targetISO) {
+      const occ = findOccurrence(chip.id, chip.occ);
+      if (!occ) return;
+      const delta = daysBetween(grabISO, targetISO);
+      const s = new Date(occ.starts_at);
+      const e2 = new Date(occ.ends_at ?? occ.starts_at);
+      const ns = new Date(s.getFullYear(), s.getMonth(), s.getDate() + delta, s.getHours(), s.getMinutes());
+      const ne = new Date(ns.getTime() + (e2 - s));
+      try {
+        if (await moveEvent(occ, ns, ne)) {
+          selected = targetISO;
+          rerender();
+        }
+      } catch (err) {
+        alert('옮기지 못했어요: ' + err.message);
+      }
+    }
     grid.addEventListener('pointercancel', reset);
     grid.addEventListener('contextmenu', (e) => { if (range.start) e.preventDefault(); });
 
@@ -240,13 +295,21 @@ export const calendar = {
     el.querySelector('[data-slot=day-list]').addEventListener('click', (e) => {
       const b = e.target.closest('[data-event]');
       if (!b) return;
-      const ev = store.getState().data.events.find((x) => x.id === b.dataset.event);
+      const ev = findOccurrence(b.dataset.event, b.dataset.occ);
       if (ev) dialog.open(ev);
     });
   },
 
   update(el, s) {
-    el.querySelector('[data-slot=title]').textContent = `${viewY}년 ${viewM + 1}월`;
+    const weekMode = mode === 'week';
+    el.querySelector('[data-slot=title]').textContent = weekMode ? weekTitle(selected) : `${viewY}년 ${viewM + 1}월`;
+    el.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.mode === mode)));
+    el.querySelector('[data-nav="-1"]').setAttribute('aria-label', weekMode ? '지난주' : '이전 달');
+    el.querySelector('[data-nav="1"]').setAttribute('aria-label', weekMode ? '다음 주' : '다음 달');
+    el.querySelector('[data-slot=cal]').hidden = weekMode;
+    el.querySelector('[data-slot=day-panel]').hidden = weekMode;
+    el.querySelector('[data-slot=tip]').hidden = weekMode;
+    el.querySelector('[data-slot=week-view]').hidden = !weekMode;
 
     // 디데이 띠
     const top = [...s.data.ddays]
@@ -281,7 +344,7 @@ export const calendar = {
       ].join(' ');
       const maxChips = hol ? 1 : 2;
       const chips = evs.slice(0, maxChips)
-        .map((ev) => `<span class="chip-ev" style="background:${colorOf(ev.color).bg}">${esc(ev.title)}</span>`)
+        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">${esc(ev.title)}</span>`)
         .join('');
       const more = evs.length > maxChips ? `<span class="chip-more">+${evs.length - maxChips}</span>` : '';
       const label = `${d.getMonth() + 1}월 ${d.getDate()}일${hol ? `, ${hol}` : ''}${evs.length ? `, 일정 ${evs.length}개` : ''}`;
@@ -293,6 +356,7 @@ export const calendar = {
         </button>`);
     }
     el.querySelector('[data-slot=grid]').innerHTML = cells.join('');
+    if (weekMode && el._weekCtx) weekView.update(el.querySelector('[data-slot=week-view]'), s, el._weekCtx);
 
     // 선택한 날
     const h = holidayOn(selected, s);
@@ -303,17 +367,17 @@ export const calendar = {
     el.querySelector('[data-slot=day-list]').innerHTML = list.length
       ? list.map((ev) => `
           <li>
-            <button class="card ev-row" data-event="${ev.id}">
+            <button class="card ev-row" data-event="${ev.id}" data-occ="${ev._occ}">
               <span class="ev-bar" style="background:${colorOf(ev.color).bar}"></span>
               <span class="ev-time">${eventTime(ev)}</span>
-              <span class="ev-title">${esc(ev.title)}${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
+              <span class="ev-title"><span>${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
             </button>
           </li>`).join('')
       : '<li class="empty muted">일정이 없어요. 오른쪽 아래 + 로 추가하세요.</li>';
   },
 };
 
-// ── 일정 추가/수정 창 (하루 화면에서도 같이 씀) ──
+// ── 일정 추가/수정 창 (하루·주간 화면에서도 같이 씀) ──
 export function eventDialogHTML() {
   return `
   <dialog class="sheet" data-slot="ev-dialog" aria-labelledby="ev-dialog-title">
@@ -328,6 +392,26 @@ export function eventDialogHTML() {
       <div class="form-row" data-when="timed">
         <label class="grow">시작<input type="time" name="start" value="09:00"></label>
         <label class="grow">끝<input type="time" name="end" value="10:00"></label>
+      </div>
+      <label>반복
+        <select name="repeat">
+          <option value="">안 함</option>
+          <option value="DAILY">매일</option>
+          <option value="WEEKLY">매주</option>
+          <option value="MONTHLY">매달</option>
+          <option value="YEARLY">매년</option>
+        </select>
+      </label>
+      <div class="repeat-box" data-when="repeat" hidden>
+        <div class="form-row">
+          <label class="grow"><span data-slot="interval-label">간격</span><input type="number" name="interval" min="1" max="99" value="1" inputmode="numeric"></label>
+          <label class="grow">반복 끝나는 날 (비우면 계속)<input type="date" name="until"></label>
+        </div>
+        <fieldset class="days" data-when="weekly" hidden>
+          <legend>반복 요일</legend>
+          <div class="day-chips" data-slot="rdays">${WD.map((w, i) => `<button type="button" class="chip" data-rday="${i}" aria-pressed="false">${w}</button>`).join('')}</div>
+        </fieldset>
+        <p class="repeat-summary" data-slot="repeat-summary"></p>
       </div>
       <fieldset class="days">
         <legend>색</legend>
@@ -350,11 +434,14 @@ export function eventDialogHTML() {
   </dialog>`;
 }
 
+const UNIT = { DAILY: '일마다', WEEKLY: '주마다', MONTHLY: '개월마다', YEARLY: '년마다' };
+
 export function setupEventDialog(root) {
   const dlg = root.querySelector('[data-slot=ev-dialog]');
   const form = dlg.querySelector('form');
   const f = form.elements;
   const msg = form.querySelector('.form-msg');
+  const chips = () => [...form.querySelectorAll('[data-rday]')];
   let editing = null;
 
   const syncAllDay = () => {
@@ -363,6 +450,40 @@ export function setupEventDialog(root) {
     form.querySelectorAll('[data-when=timed]').forEach((n) => (n.hidden = all));
   };
   f.namedItem('all_day').addEventListener('change', syncAllDay);
+
+  // 지금 입력된 반복 설정을 규칙으로 (안 함이면 null)
+  function readRule() {
+    const freq = f.namedItem('repeat').value;
+    if (!freq) return null;
+    const interval = Math.min(Math.max(parseInt(f.namedItem('interval').value, 10) || 1, 1), 99);
+    let days = [];
+    if (freq === 'WEEKLY') {
+      days = chips().filter((c) => c.getAttribute('aria-pressed') === 'true').map((c) => Number(c.dataset.rday));
+      if (!days.length && f.namedItem('date').value) days = [parseDate(f.namedItem('date').value).getDay()];
+    }
+    return { freq, interval, days, until: f.namedItem('until').value || null, ex: [] };
+  }
+
+  function syncRepeat() {
+    const freq = f.namedItem('repeat').value;
+    form.querySelector('[data-when=repeat]').hidden = !freq;
+    form.querySelector('[data-when=weekly]').hidden = freq !== 'WEEKLY';
+    if (freq) form.querySelector('[data-slot=interval-label]').textContent = `간격 (${UNIT[freq]})`;
+    if (freq === 'WEEKLY' && !chips().some((c) => c.getAttribute('aria-pressed') === 'true') && f.namedItem('date').value) {
+      const d = parseDate(f.namedItem('date').value).getDay();
+      chips().forEach((c) => c.setAttribute('aria-pressed', String(Number(c.dataset.rday) === d)));
+    }
+    form.querySelector('[data-slot=repeat-summary]').textContent = freq ? `${describeRule(readRule())} 반복` : '';
+  }
+  f.namedItem('repeat').addEventListener('change', syncRepeat);
+  f.namedItem('interval').addEventListener('input', syncRepeat);
+  f.namedItem('until').addEventListener('change', syncRepeat);
+  form.querySelector('[data-slot=rdays]').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rday]');
+    if (!b) return;
+    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+    syncRepeat();
+  });
 
   function open(ev, dateISO, startHM, opts = {}) {
     editing = ev;
@@ -385,10 +506,16 @@ export function setupEventDialog(root) {
       f.namedItem('start').value = `${pad(startH)}:${startM}`;
       f.namedItem('end').value = `${pad(Math.min(startH + 1, 23))}:${startH >= 23 ? '59' : startM}`;
     }
+    const rule = ev ? parseRule(ev.recurrence) : null;
+    f.namedItem('repeat').value = rule?.freq ?? '';
+    f.namedItem('interval').value = rule?.interval ?? 1;
+    f.namedItem('until').value = rule?.until ?? '';
+    chips().forEach((c) => c.setAttribute('aria-pressed', String(!!rule?.days.includes(Number(c.dataset.rday)))));
     const color = ev?.color ?? 'blue';
     form.querySelectorAll('input[name=color]').forEach((r) => (r.checked = r.value === color));
     f.namedItem('note').value = ev?.note ?? '';
     syncAllDay();
+    syncRepeat();
     dlg.showModal();
   }
 
@@ -418,17 +545,27 @@ export function setupEventDialog(root) {
       starts = new Date(`${date}T${st}`);
       ends = new Date(`${date}T${en}`);
     }
-    const row = {
+    const rule = readRule();
+    if (rule?.until && rule.until < date) return fail('반복 끝나는 날이 시작보다 빠를 수 없어요.');
+    const fields = {
       title,
       all_day: allDay,
-      starts_at: starts.toISOString(),
-      ends_at: ends.toISOString(),
       color: form.querySelector('input[name=color]:checked')?.value ?? 'blue',
       note: f.namedItem('note').value.trim() || null,
     };
     try {
-      if (editing) await store.update('events', editing.id, row);
-      else await store.insert('events', row);
+      if (editing) {
+        const oldRule = parseRule(editing.recurrence);
+        const opts = scopeOptions(editing, !sameRule(rule, oldRule));
+        let scope = 'all';
+        if (opts) {
+          scope = await askScope('수정', opts);
+          if (!scope) return;
+        }
+        await applyEdit({ occ: editing, fields, start: starts, end: ends, rule, scope });
+      } else {
+        await createEvent({ fields, start: starts, end: ends, rule });
+      }
       dlg.close();
     } catch (err) {
       fail('저장하지 못했어요: ' + err.message);
@@ -437,9 +574,15 @@ export function setupEventDialog(root) {
 
   dlg.querySelector('[data-action=cancel]').addEventListener('click', () => dlg.close());
   dlg.querySelector('[data-action=delete]').addEventListener('click', async () => {
-    if (!editing || !confirm(`'${editing.title}' 일정을 지울까요?`)) return;
+    if (!editing) return;
     try {
-      await store.remove('events', editing.id);
+      const opts = scopeOptions(editing);
+      let scope = 'all';
+      if (opts) {
+        scope = await askScope('삭제', opts);
+        if (!scope) return;
+      } else if (!confirm(`'${editing.title}' 일정을 지울까요?`)) return;
+      await deleteEvent({ occ: editing, scope });
       dlg.close();
     } catch (err) {
       fail('지우지 못했어요: ' + err.message);
