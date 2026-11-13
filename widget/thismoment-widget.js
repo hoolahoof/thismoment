@@ -183,31 +183,29 @@ function build(data) {
   const normal = evs.filter((e) => !e.is_holiday).filter((e) => e.all_day || e.end > now);
   const holName = kr ? kr.name : myHol ? myHol.title : null;
 
-  // 머리글: 오늘 날짜 (휴일이면 빨간 이름을 옆에)
-  const head = w.addStack();
-  head.centerAlignContent();
-  put(head, `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}`, 16, holName ? C.danger : C.text, 'bold');
-  if (holName && !small) {
-    head.addSpacer(8);
-    put(head, holName, 11, C.danger, 'medium');
+  // 머리글: 오늘 날짜 (휴일이면 빨간 이름을 옆에) — 작은 크기는 디데이만 보여준다
+  if (!small) {
+    const head = w.addStack();
+    head.centerAlignContent();
+    put(head, `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}`, 16, holName ? C.danger : C.text, 'bold');
+    if (holName) {
+      head.addSpacer(8);
+      put(head, holName, 11, C.danger, 'medium');
+    }
+    head.addSpacer();
+    w.addSpacer(12);
   }
-  head.addSpacer();
-  if (holName && small) put(w, holName, 11, C.danger, 'medium');
-  if (small) w.addSpacer();
-  else w.addSpacer(12);
 
   // 디데이: 다가오는 것 먼저, 그 다음 지난 것/기념일
   const all = data.ddays || [];
   const dd = all.filter((d) => !d.count_up && d.diff >= 0).concat(all.filter((d) => d.count_up || d.diff < 0)).slice(0, small ? 1 : 2);
 
   if (small) {
+    // 제목 · D-숫자 · 날짜만, 위젯 가운데에 크게
+    w.addSpacer();
     if (dd.length) ddayCard(w, dd[0], true);
     else put(w, '디데이 없음', 13, C.muted);
     w.addSpacer();
-    rule(w, false);
-    w.addSpacer(8);
-    if (normal.length) evLine(w, normal[0], 13);
-    else put(w, '오늘 일정 없음', 13, C.muted);
   } else {
     const body = w.addStack();
     body.topAlignContent();
