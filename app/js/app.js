@@ -7,12 +7,16 @@ import { isLockEnabled, verifyLock, renderLock, watchRelock, disableLock } from 
 
 const root = document.getElementById('app');
 const TABS = [
+  { id: 'home', label: '홈' },
   { id: 'calendar', label: '캘린더' },
   { id: 'day', label: '하루' },
   { id: 'dday', label: '디데이' },
   { id: 'alarm', label: '알람' },
   { id: 'settings', label: '설정' },
 ];
+
+// 앱을 새로 열면 항상 홈부터 (예전 홈 화면 아이콘이 #/calendar 로 열리는 경우 포함)
+if (!location.hash || location.hash === '#/calendar') history.replaceState(null, '', '#/home');
 
 let signedInAs = null;
 let currentUser = null;
@@ -21,7 +25,7 @@ let storeStarted = false;
 
 const routeId = () => {
   const id = location.hash.replace(/^#\/?/, '');
-  return views[id] ? id : 'calendar';
+  return views[id] ? id : 'home';
 };
 
 function renderShell() {

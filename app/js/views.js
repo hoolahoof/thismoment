@@ -4,11 +4,12 @@ import * as store from './store.js';
 import { logout } from './app.js';
 import { lockSupported, isLockEnabled, enableLock, disableLock } from './lock.js';
 import { esc, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
-import { holidayOn, alarmOn, nextRing, nextSkip } from './holidays.js';
+import { nextRing } from './holidays.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
 import { calendar, setSelected } from './calendar.js';
 import { localISO, lastDayISO, nextOccurrenceISO } from './recur.js';
 import { day } from './day.js';
+import { home } from './home.js';
 
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
 const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComponent(SHORTCUT_NAME);
@@ -110,7 +111,6 @@ const shortDate = (iso) => {
   const d = new Date(iso + 'T00:00:00');
   return `${d.getMonth() + 1}/${d.getDate()} (${WD[d.getDay()]})`;
 };
-const PLAN_DAYS = 120; // 앞으로 4개월 안의 공휴일을 보여준다
 
 const alarm = {
   mount(el) {
@@ -132,8 +132,6 @@ const alarm = {
         <p class="form-msg" role="status"></p>
       </form>
       <ul class="list" data-slot="list"></ul>
-      <h2 class="section-title">다가오는 공휴일 · 알람 울림 확인</h2>
-      <div class="card plan" data-slot="plan"></div>
       <a class="btn block-link" href="${SHORTCUT_RUN_URL}">알람 바꾼 뒤 지금 시계에 반영</a>
       <p class="muted small">실제로 울리는 건 아이폰 시계 앱이에요. 매일 0시에 단축어가 자동으로 맞춰줘요. (설정 → 아이폰 시계 알람 연동)</p>`;
 
@@ -200,7 +198,6 @@ const alarm = {
     el.querySelector('[data-slot=list]').innerHTML = alarms.length
       ? alarms.map((a) => {
           const next = nextRing(a, s);
-          const skip = a.skip_holidays || a.skip_custom_holidays ? nextSkip(a, s) : null;
           return `
           <li class="card alarm ${a.enabled ? '' : 'is-off'}">
             <div class="alarm-main">
@@ -213,7 +210,6 @@ const alarm = {
                 aria-pressed="${a.skip_holidays}" aria-label="공휴일 설정 바꾸기">
                 ${a.skip_holidays ? '공휴일엔 안 울림' : '공휴일에도 울림'}
               </button>
-              ${skip ? `<span class="muted small">다음 공휴일 쉼: ${shortDate(skip.iso)} ${esc(skip.name)}</span>` : ''}
             </div>
             <div class="alarm-side">
               <button class="switch" data-action="toggle" data-id="${a.id}" aria-pressed="${a.enabled}" aria-label="${esc(a.label)} 켜기"><span></span></button>
@@ -222,39 +218,6 @@ const alarm = {
           </li>`;
         }).join('')
       : '<li class="empty muted">아직 알람이 없어요. 오른쪽 위 추가를 눌러보세요.</li>';
-
-    // 다가오는 공휴일마다: 어떤 알람이 울리고, 어떤 알람이 쉬는지
-    const rows = [];
-    const d = todayLocal();
-    for (let i = 0; i < PLAN_DAYS; i++) {
-      const iso = toISODate(d);
-      const h = holidayOn(iso, s);
-      const items = alarms
-        .map((a) => ({ a, r: alarmOn(a, iso, s) }))
-        .filter(({ r }) => r.reason !== 'not_today' && r.reason !== 'off');
-      if (h.kr || h.custom) {
-        const dow = d.getDay();
-        const hol = h.kr || h.custom;
-        rows.push(`
-          <div class="plan-day ${hol ? 'is-holiday' : ''}">
-            <div class="plan-date ${hol || dow === 0 ? 'red' : dow === 6 ? 'blue' : ''}">
-              <strong>${shortDate(iso)}</strong>${hol ? `<span>${esc(hol)}</span>` : ''}
-            </div>
-            <ul class="plan-items">
-              ${items.length ? items.map(({ a, r }) => `
-                <li class="${r.ring ? 'ring' : 'skip'}">
-                  <span class="plan-mark" aria-hidden="true">${r.ring ? '●' : '✕'}</span>
-                  <span>${a.time.slice(0, 5)} ${esc(a.label)}</span>
-                  <span class="plan-why">${r.ring ? (r.holiday ? '울림 (공휴일이지만 울리게 설정)' : '울림') : r.reason === 'holiday' ? '공휴일이라 안 울림' : '내 휴일이라 안 울림'}</span>
-                </li>`).join('') : '<li class="muted">이 날 울릴 알람 없음</li>'}
-            </ul>
-          </div>`);
-      }
-      d.setDate(d.getDate() + 1);
-    }
-    el.querySelector('[data-slot=plan]').innerHTML = rows.length
-      ? rows.join('')
-      : '<p class="empty muted">앞으로 4개월 안에 공휴일이 없어요.</p>';
   },
 };
 
@@ -409,4 +372,4 @@ const settings = {
   },
 };
 
-export const views = { calendar, day, dday, alarm, settings };
+export const views = { home, calendar, day, dday, alarm, settings };

@@ -481,3 +481,25 @@ dialog.sheet.tall { height: 92dvh; }
   color: #A3241A; font-size: 11px; font-weight: 700; line-height: 18px; vertical-align: 1px;
 }
 .form select option:disabled { color: #B5B5AE; }
+
+/* ── 홈(대시보드) ── */
+.home-head { align-items: flex-end; }
+.home-head-text { display: flex; flex-direction: column; }
+.home-head h1 { font-size: 24px; font-weight: 700; }
+.hol-chip { display: inline-block; padding: 4px 10px; border-radius: 14px; background: #FFE9E7; color: #A3241A; font-size: 13px; font-weight: 700; }
+.home-empty { padding: 16px; font-size: 14px; }
+.next-alarm { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 14px 16px 6px; }
+.next-alarm strong { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; }
+.next-alarm .sub { font-size: 14px; }
+.home-alarm-list { list-style: none; margin: 0; padding: 4px 16px 8px; display: flex; flex-direction: column; }
+.home-alarm-list li { display: flex; align-items: center; gap: 10px; min-height: 42px; border-top: 1px solid #EFEFEA; font-size: 14px; }
+.home-alarm-list li.past { color: var(--muted); }
+.ha-time { width: 48px; flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ha-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ha-state { flex: none; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.ha-state.ring { color: #1E7A43; }
+.ha-state.skip { color: var(--holiday); }
+.ha-state.past { color: var(--muted); font-weight: 500; }
+.ev-row.past { opacity: 0.55; }
+.ev-row.now { box-shadow: inset 0 0 0 2px var(--accent); }
+@media (max-width: 380px) { .tabbar a { font-size: 10px; } }
