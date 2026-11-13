@@ -299,33 +299,30 @@ a.btn { text-decoration: none; }
 .cal-nav .icon-btn { width: 36px; }
 .cal-nav h1 { font-size: 19px; min-width: 0; text-align: center; }
 .cal-tools { display: flex; align-items: center; gap: var(--space-1); }
-.cal { padding: 0; overflow: hidden; touch-action: pan-y; }
-.cal-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-line); }
+.cal { padding: 10px 4px 8px; touch-action: pan-y; }
+.cal-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding-bottom: 6px; }
 .cal-week span { text-align: center; font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-muted); }
 .cal-week span.red { color: var(--color-danger); }
 .cal-week span.blue { color: var(--color-accent); }
-.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; }
 .cal-cell {
-  min-height: 80px; min-width: 0; padding: 3px 2px 4px; border: 0; border-radius: 0; background: transparent;
-  border-right: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line);
+  min-height: 76px; min-width: 0; padding: 2px 2px 4px; border: 0; border-radius: 10px; background: transparent;
   display: flex; flex-direction: column; align-items: stretch; gap: 2px; cursor: pointer; color: var(--color-text); text-align: left;
   -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
 }
-.cal-cell:nth-child(7n) { border-right: 0; }
-.cal-grid .cal-cell:nth-last-child(-n + 7) { border-bottom: 0; }
 .cal-cell.selected { background: var(--color-accent-soft); }
 .cal-cell.other { opacity: 0.4; }
-.cal-num { align-self: center; width: 26px; height: 26px; border-radius: var(--radius-chip); display: flex; align-items: center; justify-content: center; font-size: var(--font-size-sm); }
+.cal-num { align-self: center; width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-sm); }
 .cal-cell.red .cal-num { color: var(--color-danger); }
 .cal-cell.blue .cal-num { color: var(--color-accent); }
-.cal-cell.today .cal-num { background: var(--color-accent); color: var(--color-on-accent); font-weight: var(--font-weight-bold); }
+.cal-cell.today .cal-num { background: var(--color-text); color: var(--color-bg); font-weight: var(--font-weight-bold); }
 .cal-hol { font-size: 10px; line-height: 14px; color: var(--color-danger); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chip-ev {
-  font-size: 10px; line-height: 15px; padding: 0 3px; border-radius: 3px; border-left: 2px solid var(--color-line-strong); color: var(--color-text);
+  font-size: 10px; line-height: 15px; padding: 0 3px; border-radius: 4px; color: var(--color-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
 }
 .chip-more { font-size: 10px; line-height: 13px; color: var(--color-muted); text-align: center; }
-.cal-cell.in-range { background: var(--color-accent-soft); }
+.cal-cell.in-range { background: var(--color-accent-soft); border-radius: 0; }
 .cal-cell.in-range .cal-num { font-weight: var(--font-weight-bold); }
 .cal-cell.drop-target { outline: 2px solid var(--color-accent); outline-offset: -2px; background: var(--color-accent-soft); }
 .cal-grid.ranging { user-select: none; -webkit-user-select: none; }
@@ -478,3 +475,18 @@ dialog.sheet.tall { height: 92dvh; }
 .wk-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--color-danger); pointer-events: none; z-index: 2; }
 
 @media (max-width: 380px) { .tabbar a { font-size: 10px; } }
+
+/* ── 디데이 화면 ── */
+.dday-hero { padding: var(--space-4); border-left: 3px solid var(--color-accent); display: flex; flex-direction: column; gap: 2px; }
+.dday-hero.is-near { border-left-color: var(--color-danger); }
+.dday-hero-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.dday-hero-title { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dday-hero-count { font-size: var(--font-size-display); line-height: 1.1; font-weight: var(--font-weight-bold); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-top: var(--space-1); }
+.dday-hero.is-near .dday-hero-count { color: var(--color-danger); }
+.dday-hero-date { font-size: var(--font-size-sm); color: var(--color-muted); }
+.dday-bar { height: 6px; margin-top: var(--space-3); border-radius: 3px; background: var(--color-surface-2); overflow: hidden; }
+.dday-bar span { display: block; height: 100%; background: var(--color-accent); }
+.dday-hero.is-near .dday-bar span { background: var(--color-danger); }
+.dday-bar-note { display: flex; justify-content: space-between; margin-top: 4px; }
+.dday-row.is-near .dday-num { color: var(--color-danger); }
+.widget-sw { display: flex; flex-direction: column; align-items: center; gap: 2px; }

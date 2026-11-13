@@ -314,7 +314,7 @@ export const calendar = {
       ].join(' ');
       const maxChips = hol ? 1 : 2;
       const chips = evs.slice(0, maxChips)
-        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg};border-left-color:${colorOf(ev.color).bar}">${esc(ev.title)}</span>`)
+        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">${esc(ev.title)}</span>`)
         .join('');
       const more = evs.length > maxChips ? `<span class="chip-more">+${evs.length - maxChips}</span>` : '';
       const label = `${d.getMonth() + 1}월 ${d.getDate()}일${hol ? `, ${hol}` : ''}${evs.length ? `, 일정 ${evs.length}개` : ''}`;

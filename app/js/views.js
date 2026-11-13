@@ -3,7 +3,7 @@
 import * as store from './store.js';
 import { logout } from './app.js';
 import { lockSupported, isLockEnabled, enableLock, disableLock } from './lock.js';
-import { esc, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
+import { esc, ddayIcon, parseDate, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
 import { nextRing, isOnce } from './holidays.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
 import { calendar, setSelected } from './calendar.js';
@@ -32,15 +32,17 @@ const dday = {
   mount(el) {
     el.innerHTML = `
       ${header('디데이')}
+      <div data-slot="hero"></div>
+      <h2 class="section-title">전체</h2>
+      <ul class="list" data-slot="list"></ul>
+      <h2 class="section-title">디데이 추가</h2>
       <form class="card form inline-form" data-slot="form">
         <label>이름<input name="title" required maxlength="40" placeholder="예: 여행 출발"></label>
         <label>날짜<input name="target_date" type="date" required value="${toISODate(todayLocal())}"></label>
         <label class="check"><input type="checkbox" name="count_up"> 지난 날부터 세기 (D+)</label>
         <button class="btn primary" type="submit">${icons.plus}추가</button>
         <p class="form-msg" role="status"></p>
-      </form>
-      <h2 class="section-title">전체</h2>
-      <ul class="list" data-slot="list"></ul>`;
+      </form>`;
 
     el.querySelector('[data-slot=form]').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -79,23 +81,41 @@ const dday = {
     });
   },
   update(el, s) {
-    const list = [...s.data.ddays].sort((a, b) => Math.abs(daysUntil(a.target_date)) - Math.abs(daysUntil(b.target_date)));
+    const all = s.data.ddays;
+    const upcoming = all.filter((d) => !d.count_up && daysUntil(d.target_date) >= 0)
+      .sort((x, y) => x.target_date.localeCompare(y.target_date));
+    const hero = upcoming[0];
+    el.querySelector('[data-slot=hero]').innerHTML = hero ? (() => {
+      const n = daysUntil(hero.target_date);
+      const start = hero.created_at ? new Date(hero.created_at) : null;
+      const total = start ? Math.max(1, Math.round((parseDate(hero.target_date) - new Date(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000)) : 0;
+      const pct = total ? Math.min(100, Math.max(0, Math.round(((total - n) / total) * 100))) : 0;
+      return `
+      <section class="card dday-hero ${n <= 7 ? 'is-near' : ''}">
+        <div class="dday-hero-top"><span class="dday-hero-title">${esc(hero.title)}</span><span class="dday-card-ic">${ddayIcon(hero.title)}</span></div>
+        <div class="dday-hero-count">${ddayLabel(hero)}</div>
+        <div class="dday-hero-date">${fmtDate(hero.target_date)}</div>
+        ${total ? `<div class="dday-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="진행률"><span style="width:${pct}%"></span></div><div class="dday-bar-note muted small"><span>등록일부터 ${pct}%</span><span>${n === 0 ? '오늘이에요' : `${n}일 남음`}</span></div>` : ''}
+      </section>`;
+    })() : '';
+
+    const list = [...all].sort((a, b) => Math.abs(daysUntil(a.target_date)) - Math.abs(daysUntil(b.target_date)));
     el.querySelector('[data-slot=list]').innerHTML = list.length
       ? list
           .map(
             (d) => `
-        <li class="card row">
+        <li class="card row dday-row ${!d.count_up && daysUntil(d.target_date) >= 0 && daysUntil(d.target_date) <= 7 ? 'is-near' : ''}">
           <div class="row-main">
             <span class="row-title">${esc(d.title)}</span>
             <span class="muted small">${fmtDate(d.target_date)}${d.count_up ? ' 부터' : ''}</span>
           </div>
           <strong class="dday-num">${ddayLabel(d)}</strong>
-          <button class="switch" data-action="widget" data-id="${d.id}" aria-pressed="${d.show_in_widget}" aria-label="홈 위젯에 표시"><span></span></button>
+          <div class="widget-sw"><span class="muted small">위젯</span><button class="switch" data-action="widget" data-id="${d.id}" aria-pressed="${d.show_in_widget}" aria-label="홈 위젯에 표시"><span></span></button></div>
           <button class="icon-btn" data-action="delete" data-id="${d.id}" aria-label="${esc(d.title)} 삭제">${icons.trash}</button>
         </li>`
           )
           .join('')
-      : '<li class="empty muted">아직 디데이가 없어요. 위에서 추가해 보세요.</li>';
+      : '<li class="empty muted">아직 디데이가 없어요. 아래에서 추가해 보세요.</li>';
   },
 };
 
