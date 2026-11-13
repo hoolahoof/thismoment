@@ -57,9 +57,6 @@ export const home = {
       </header>
       <div class="dday-grid" data-slot="strip"></div>
 
-      <h2 class="section-title">알람</h2>
-      <section class="card" data-slot="alarms"></section>
-
       <h2 class="section-title">오늘 일정</h2>
       <ul class="list" data-slot="events"></ul>
 
@@ -67,7 +64,10 @@ export const home = {
         <h2 class="section-title">오늘 할 일</h2>
         <span class="muted small" data-slot="todo-count"></span>
       </div>
-      <ul class="list" data-slot="todos"></ul>`;
+      <ul class="list" data-slot="todos"></ul>
+
+      <h2 class="section-title">알람</h2>
+      <section class="card" data-slot="alarms"></section>`;
 
     el.addEventListener('click', async (e) => {
       // 디데이 카드: 캘린더에서 그 날짜를 열기

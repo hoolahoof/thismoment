@@ -532,9 +532,9 @@ dialog.sheet.tall { height: 92dvh; }
 /* iOS 날짜 칸이 카드 밖으로 삐져나오지 않게 */
 .form input[type='date'], .form input[type='time'] {
   -webkit-appearance: none; appearance: none; display: block; width: 100%; max-width: 100%; min-width: 0;
-  text-align: left; text-align-last: left; padding-right: var(--space-3);
+  height: 46px; line-height: 44px; padding-top: 0; padding-bottom: 0; text-align: left; text-align-last: left;
 }
-.form input[type='date']::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.form input[type='date']::-webkit-date-and-time-value, .form input[type='time']::-webkit-date-and-time-value { text-align: left; margin: 0; min-height: 1.2em; line-height: 44px; }
 .form-row input[type='time'] { width: auto; }
 
 /* 디데이 카드 왼쪽 막대: 둥근 모서리와 어긋나지 않게 안쪽에 곧게 그린다 */
@@ -553,3 +553,4 @@ dialog.sheet.tall { height: 92dvh; }
 .since-label { display: inline-flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); letter-spacing: 0.08em; color: var(--color-warn); }
 .since-label i { font-style: normal; font-size: 10px; }
 .since strong { font-size: 32px; line-height: 1.1; font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--color-text); }
+.form input[type='date'], .form input[type='time'] { display: flex; align-items: center; }
