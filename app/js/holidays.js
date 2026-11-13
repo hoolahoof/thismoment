@@ -1,10 +1,17 @@
 // 공휴일 판정과 알람 울림 계산. 서버의 get_alarm_plan 과 같은 규칙.
+// "내 휴일"은 일정 추가 창에서 휴일 버튼을 켠 일정(is_holiday)이다. 하루 종일·여러 날·매년 반복이 모두 된다.
 import { parseDate, toISODate, todayLocal } from './util.js';
+import { eventsOn } from './recur.js';
 
 const DEFAULT_SETTINGS = { show_kr_holidays: true, include_substitute: true, include_temporary: true };
-const mmdd = (iso) => iso.slice(5, 7) + iso.slice(8, 10);
 
-// 그 날의 공휴일 이름 { kr, custom } (없으면 null)
+// 그 날 휴일로 표시한 일정들 (반복 포함)
+export function holidayEventsOn(iso, s) {
+  const list = s.data.events.filter((e) => e.is_holiday);
+  return list.length ? eventsOn(iso, list) : [];
+}
+
+// 그 날의 공휴일 이름 { kr, custom } (없으면 null). custom = 내가 휴일로 표시한 일정의 이름
 export function holidayOn(iso, s) {
   const st = s.data.settings[0] ?? DEFAULT_SETTINGS;
   const h = s.holidays.find((x) => x.date === iso);
@@ -14,15 +21,8 @@ export function holidayOn(iso, s) {
     (h.kind !== 'temporary' || st.include_temporary)
       ? h.name
       : null;
-  const c = customHolidayOn(iso, s);
-  return { kr, custom: c ? c.name : null };
-}
-
-// 그 날에 해당하는 내 휴일 (없으면 null)
-export function customHolidayOn(iso, s) {
-  return s.data.custom_holidays.find((c) =>
-    c.yearly ? mmdd(iso) >= mmdd(c.start_date) && mmdd(iso) <= mmdd(c.end_date) : iso >= c.start_date && iso <= c.end_date
-  ) ?? null;
+  const mine = holidayEventsOn(iso, s)[0];
+  return { kr, custom: mine ? mine.title : null };
 }
 
 // 알람이 그 날 울리는지와 이유

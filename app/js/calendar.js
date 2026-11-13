@@ -1,6 +1,6 @@
 // 월간 캘린더: 달력 + 공휴일 표시 + 일정 칩, 날짜를 누르면 아래에 그날 일정, + 로 일정 추가/수정.
 import * as store from './store.js';
-import { holidayOn, customHolidayOn } from './holidays.js';
+import { holidayOn } from './holidays.js';
 import { esc, toISODate, parseDate, todayLocal, ddayLabel, daysUntil, icons } from './util.js';
 import { localISO, eventsOn, parseRule, sameRule, describeRule, hm, eventTime, daysBetween, addDays } from './recur.js';
 import { COLORS, colorOf, REPEAT_ICON } from './colors.js';
@@ -69,24 +69,13 @@ export const calendar = {
       <section class="day-panel" data-slot="day-panel">
         <div class="day-panel-head">
           <h2 data-slot="day-title"></h2><span data-slot="day-hol" class="red small"></span>
-          <span class="grow"></span>
-          <button class="btn pill" data-action="holiday" data-slot="hol-btn"></button>
         </div>
         <ul class="list" data-slot="day-list"></ul>
       </section>
-      <p class="muted small center cal-tip" data-slot="tip">날짜를 길게 누른 채 끌면 여러 날을 고르고, 일정을 길게 눌러 끌면 다른 날로 옮겨요.</p>
+      <p class="muted small center cal-tip" data-slot="tip">날짜를 길게 누른 채 끌면 여러 날 일정을 만들고, 일정을 길게 눌러 끌면 다른 날로 옮겨요. 휴일은 일정 추가 창의 ‘휴일’ 버튼으로 만들어요.</p>
       <button class="fab" data-action="add" aria-label="일정 추가">${icons.plus}</button>
       ${eventDialogHTML()}
-      ${holidayDialogHTML()}
-      ${searchDialogHTML()}
-      <dialog class="sheet" data-slot="range-sheet" aria-labelledby="range-title">
-        <div class="form">
-          <h2 id="range-title" data-slot="range-title"></h2>
-          <button class="btn primary big" data-range="event">${icons.plus}이 기간에 일정 추가</button>
-          <button class="btn big red-btn" data-range="holiday">이 기간을 휴일로 지정 (빨간 날)</button>
-          <button class="btn" data-range="cancel">취소</button>
-        </div>
-      </dialog>`;
+      ${searchDialogHTML()}`;
 
     const rerender = () => calendar.update(el, store.getState());
     let suppressClick = false;
@@ -146,7 +135,6 @@ export const calendar = {
     }
 
     const dialog = setupEventDialog(el);
-    const holDialog = setupHolidayDialog(el);
 
     // 검색 / 주간 보기
     const search = setupSearch(el, {
@@ -165,9 +153,6 @@ export const calendar = {
     };
     weekView.mount(el.querySelector('[data-slot=week-view]'), el._weekCtx);
     el.querySelector('[data-action=add]').addEventListener('click', () => dialog.open(null, selected));
-    el.querySelector('[data-action=holiday]').addEventListener('click', () => {
-      holDialog.open(customHolidayOn(selected, store.getState()), selected, selected);
-    });
 
     // ── 여러 날 끌어서 고르기 ──
     // 손가락: 0.35초 길게 누른 뒤 끌기 (그냥 밀면 달 넘기기/스크롤). 마우스: 누른 채 다른 날로 끌기.
@@ -251,7 +236,7 @@ export const calendar = {
       reset();
       if (chip) {
         if (target && target !== grab) moveToDate(chip, grab, target);
-      } else openRange(a, b);
+      } else dialog.open(null, a, null, { allDay: true, endISO: b });
     });
 
     // 칩을 끌어 놓은 날로 일정 옮기기 (시간은 그대로, 여러 날 일정은 같이 밀림)
@@ -275,23 +260,6 @@ export const calendar = {
     grid.addEventListener('pointercancel', reset);
     grid.addEventListener('contextmenu', (e) => { if (range.start) e.preventDefault(); });
 
-    const sheet = el.querySelector('[data-slot=range-sheet]');
-    let picked = null;
-    function openRange(a, b) {
-      picked = [a, b];
-      const n = Math.round((parseDate(b) - parseDate(a)) / 86400000) + 1;
-      el.querySelector('[data-slot=range-title]').textContent =
-        a === b ? dayLabel(a) : `${dayLabel(a)} ~ ${dayLabel(b)} · ${n}일`;
-      sheet.showModal();
-    }
-    sheet.addEventListener('click', (e) => {
-      if (e.target === sheet) return sheet.close();
-      const b = e.target.closest('[data-range]');
-      if (!b) return;
-      sheet.close();
-      if (b.dataset.range === 'event') dialog.open(null, picked[0], null, { allDay: true, endISO: picked[1] });
-      else if (b.dataset.range === 'holiday') holDialog.open(null, picked[0], picked[1]);
-    });
     el.querySelector('[data-slot=day-list]').addEventListener('click', (e) => {
       const b = e.target.closest('[data-event]');
       if (!b) return;
@@ -333,7 +301,7 @@ export const calendar = {
       const dow = d.getDay();
       const h = holidayOn(iso, s);
       const hol = h.kr || h.custom;
-      const evs = eventsOn(iso, s.data.events);
+      const evs = eventsOn(iso, s.data.events).filter((e) => !e.is_holiday);
       const other = d.getMonth() !== viewM;
       const cls = [
         'cal-cell',
@@ -362,7 +330,6 @@ export const calendar = {
     const h = holidayOn(selected, s);
     el.querySelector('[data-slot=day-title]').textContent = selected === todayISO ? `오늘 · ${dayLabel(selected)}` : dayLabel(selected);
     el.querySelector('[data-slot=day-hol]').textContent = [h.kr, h.custom].filter(Boolean).join(' · ');
-    el.querySelector('[data-slot=hol-btn]').textContent = customHolidayOn(selected, s) ? '내 휴일 수정' : '휴일로 지정';
     const list = eventsOn(selected, s.data.events);
     el.querySelector('[data-slot=day-list]').innerHTML = list.length
       ? list.map((ev) => `
@@ -370,7 +337,7 @@ export const calendar = {
             <button class="card ev-row" data-event="${ev.id}" data-occ="${ev._occ}">
               <span class="ev-bar" style="background:${colorOf(ev.color).bar}"></span>
               <span class="ev-time">${eventTime(ev)}</span>
-              <span class="ev-title"><span>${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
+              <span class="ev-title"><span>${esc(ev.title)}${ev.is_holiday ? '<span class="hol-badge">휴일</span>' : ''}${ev.recurrence ? REPEAT_ICON : ''}</span>${ev.note ? `<span class="muted small ev-note">${esc(ev.note)}</span>` : ''}</span>
             </button>
           </li>`).join('')
       : '<li class="empty muted">일정이 없어요. 오른쪽 아래 + 로 추가하세요.</li>';
@@ -384,7 +351,11 @@ export function eventDialogHTML() {
     <form method="dialog" class="form" novalidate>
       <h2 id="ev-dialog-title" data-slot="ev-dialog-title">일정 추가</h2>
       <label>제목<input name="title" maxlength="60" required placeholder="예: 팀 회의" autocomplete="off"></label>
-      <label class="check"><input type="checkbox" name="all_day"> 하루 종일</label>
+      <div class="check-row">
+        <label class="check"><input type="checkbox" name="all_day"> 하루 종일</label>
+        <button type="button" class="holiday-toggle" data-action="holiday" aria-pressed="false">휴일</button>
+      </div>
+      <p class="muted small" data-when="holiday-hint" hidden>달력에서 빨간 날로 보이고, ‘휴일엔 안 울림’으로 정한 알람은 울리지 않아요.</p>
       <div class="form-row">
         <label class="grow">날짜<input type="date" name="date" required></label>
         <label class="grow" data-when="allday">끝나는 날<input type="date" name="end_date"></label>
@@ -413,7 +384,7 @@ export function eventDialogHTML() {
         </fieldset>
         <p class="repeat-summary" data-slot="repeat-summary"></p>
       </div>
-      <fieldset class="days">
+      <fieldset class="days" data-when="color">
         <legend>색</legend>
         <div class="swatches">
           ${Object.entries(COLORS).map(([k, c]) => `
@@ -444,12 +415,33 @@ export function setupEventDialog(root) {
   const chips = () => [...form.querySelectorAll('[data-rday]')];
   let editing = null;
 
+  const holBtn = form.querySelector('[data-action=holiday]');
+  const isHoliday = () => holBtn.getAttribute('aria-pressed') === 'true';
+
   const syncAllDay = () => {
     const all = f.namedItem('all_day').checked;
     form.querySelectorAll('[data-when=allday]').forEach((n) => (n.hidden = !all));
     form.querySelectorAll('[data-when=timed]').forEach((n) => (n.hidden = all));
   };
   f.namedItem('all_day').addEventListener('change', syncAllDay);
+
+  // 휴일: 하루 종일 일정 + 빨간 날. 반복은 '안 함'과 '매년'만, 색은 빨강으로 고정
+  function syncHoliday() {
+    const on = isHoliday();
+    if (on) f.namedItem('all_day').checked = true;
+    f.namedItem('all_day').disabled = on;
+    form.querySelector('[data-when=holiday-hint]').hidden = !on;
+    form.querySelector('[data-when=color]').hidden = on;
+    for (const o of f.namedItem('repeat').options) o.disabled = on && ['DAILY', 'WEEKLY', 'MONTHLY'].includes(o.value);
+    if (on && ['DAILY', 'WEEKLY', 'MONTHLY'].includes(f.namedItem('repeat').value)) f.namedItem('repeat').value = '';
+    f.namedItem('title').placeholder = on ? '예: 여름휴가, 창립기념일' : '예: 팀 회의';
+    syncAllDay();
+  }
+  holBtn.addEventListener('click', () => {
+    holBtn.setAttribute('aria-pressed', String(!isHoliday()));
+    syncHoliday();
+    syncRepeat();
+  });
 
   // 지금 입력된 반복 설정을 규칙으로 (안 함이면 null)
   function readRule() {
@@ -506,6 +498,7 @@ export function setupEventDialog(root) {
       f.namedItem('start').value = `${pad(startH)}:${startM}`;
       f.namedItem('end').value = `${pad(Math.min(startH + 1, 23))}:${startH >= 23 ? '59' : startM}`;
     }
+    holBtn.setAttribute('aria-pressed', String(!!(ev ? ev.is_holiday : opts.holiday)));
     const rule = ev ? parseRule(ev.recurrence) : null;
     f.namedItem('repeat').value = rule?.freq ?? '';
     f.namedItem('interval').value = rule?.interval ?? 1;
@@ -515,6 +508,7 @@ export function setupEventDialog(root) {
     form.querySelectorAll('input[name=color]').forEach((r) => (r.checked = r.value === color));
     f.namedItem('note').value = ev?.note ?? '';
     syncAllDay();
+    syncHoliday();
     syncRepeat();
     dlg.showModal();
   }
@@ -526,11 +520,12 @@ export function setupEventDialog(root) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const title = f.namedItem('title').value.trim();
+    const holiday = isHoliday();
+    const title = f.namedItem('title').value.trim() || (holiday ? '휴일' : '');
     const date = f.namedItem('date').value;
     if (!title) return fail('제목을 입력해 주세요.');
     if (!date) return fail('날짜를 골라주세요.');
-    const allDay = f.namedItem('all_day').checked;
+    const allDay = holiday || f.namedItem('all_day').checked;
     let starts, ends;
     if (allDay) {
       const endDate = f.namedItem('end_date').value || date;
@@ -550,8 +545,9 @@ export function setupEventDialog(root) {
     const fields = {
       title,
       all_day: allDay,
-      color: form.querySelector('input[name=color]:checked')?.value ?? 'blue',
+      color: holiday ? 'red' : form.querySelector('input[name=color]:checked')?.value ?? 'blue',
       note: f.namedItem('note').value.trim() || null,
+      is_holiday: holiday,
     };
     try {
       if (editing) {
@@ -596,82 +592,3 @@ export function setupEventDialog(root) {
   return { open };
 }
 
-// ── 내 휴일 지정 창 (설정 화면에서도 같이 씀) ──
-export function holidayDialogHTML() {
-  return `
-  <dialog class="sheet" data-slot="hol-dialog" aria-labelledby="hol-dialog-title">
-    <form method="dialog" class="form" novalidate>
-      <h2 id="hol-dialog-title" data-slot="hol-dialog-title">휴일로 지정</h2>
-      <p class="muted small">지정한 날은 달력에서 빨간 날로 보이고, "내 휴일엔 안 울림" 알람은 울리지 않아요.</p>
-      <label>이름<input name="name" maxlength="30" required placeholder="예: 여름휴가, 창립기념일" autocomplete="off"></label>
-      <div class="form-row">
-        <label class="grow">시작<input type="date" name="start" required></label>
-        <label class="grow">끝<input type="date" name="end" required></label>
-      </div>
-      <label class="check"><input type="checkbox" name="yearly"> 매년 반복 (기념일처럼)</label>
-      <p class="form-msg" role="status"></p>
-      <div class="sheet-actions">
-        <button class="btn danger" type="button" data-action="delete" hidden>휴일 해제</button>
-        <span class="grow"></span>
-        <button class="btn" type="button" data-action="cancel">취소</button>
-        <button class="btn primary" type="submit">저장</button>
-      </div>
-    </form>
-  </dialog>`;
-}
-
-export function setupHolidayDialog(root) {
-  const dlg = root.querySelector('[data-slot=hol-dialog]');
-  const form = dlg.querySelector('form');
-  const f = form.elements;
-  const msg = form.querySelector('.form-msg');
-  let editing = null;
-  const fail = (t) => {
-    msg.textContent = t;
-    msg.classList.add('error');
-  };
-
-  function open(h, startISO, endISO) {
-    editing = h;
-    msg.textContent = '';
-    msg.classList.remove('error');
-    dlg.querySelector('[data-slot=hol-dialog-title]').textContent = h ? '내 휴일 수정' : '휴일로 지정';
-    dlg.querySelector('[data-action=delete]').hidden = !h;
-    f.namedItem('name').value = h?.name ?? '';
-    f.namedItem('start').value = h?.start_date ?? startISO;
-    f.namedItem('end').value = h?.end_date ?? endISO ?? startISO;
-    f.namedItem('yearly').checked = h?.yearly ?? false;
-    dlg.showModal();
-  }
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = f.namedItem('name').value.trim() || '휴일';
-    const start = f.namedItem('start').value;
-    const end = f.namedItem('end').value || start;
-    if (!start) return fail('시작 날짜를 골라주세요.');
-    if (end < start) return fail('끝 날짜가 시작보다 빠를 수 없어요.');
-    const row = { name, start_date: start, end_date: end, yearly: f.namedItem('yearly').checked };
-    try {
-      if (editing) await store.update('custom_holidays', editing.id, row);
-      else await store.insert('custom_holidays', row);
-      dlg.close();
-    } catch (err) {
-      fail('저장하지 못했어요: ' + err.message);
-    }
-  });
-  dlg.querySelector('[data-action=cancel]').addEventListener('click', () => dlg.close());
-  dlg.querySelector('[data-action=delete]').addEventListener('click', async () => {
-    if (!editing || !confirm(`'${editing.name}' 휴일을 해제할까요?`)) return;
-    try {
-      await store.remove('custom_holidays', editing.id);
-      dlg.close();
-    } catch (err) {
-      fail('해제하지 못했어요: ' + err.message);
-    }
-  });
-  dlg.addEventListener('click', (e) => {
-    if (e.target === dlg) dlg.close();
-  });
-  return { open };
-}

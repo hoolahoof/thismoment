@@ -4,6 +4,12 @@ import { parseRule, serializeRule, localISO, addDays, daysBetween, alignStart, o
 import { toISODate } from './util.js';
 
 const masterOf = (ev) => store.getState().data.events.find((e) => e.id === ev.id);
+// is_holiday 칸이 없는 데이터베이스(005 SQL 전)에서도 일반 일정은 저장되도록, 휴일이 아닐 땐 칸을 보내지 않는다
+const clean = (fields, wasHoliday) => {
+  const o = { ...fields };
+  if (!o.is_holiday && !wasHoliday) delete o.is_holiday;
+  return o;
+};
 const occOf = (ev) => ev._occ ?? localISO(ev.starts_at);
 
 // 목록·블록에서 누른 일정 찾기 (반복이면 그날의 모습으로)
@@ -71,7 +77,7 @@ export async function applyEdit({ occ, fields, start, end, rule, scope }) {
   const master = masterOf(occ);
   if (!master) throw new Error('일정을 찾지 못했어요.');
   const oldRule = parseRule(master.recurrence);
-  const base = (s, e) => ({ ...fields, starts_at: s.toISOString(), ends_at: e.toISOString() });
+  const base = (s, e, was = !!master.is_holiday) => ({ ...clean(fields, was), starts_at: s.toISOString(), ends_at: e.toISOString() });
 
   // 반복이 아니던 일정
   if (!oldRule) {
@@ -84,14 +90,14 @@ export async function applyEdit({ occ, fields, start, end, rule, scope }) {
 
   if (scope === 'one') {
     await store.update('events', master.id, { recurrence: serializeRule({ ...oldRule, ex: [...oldRule.ex, occISO] }) });
-    return store.insert('events', { ...base(start, end), recurrence: null });
+    return store.insert('events', { ...base(start, end, false), recurrence: null });
   }
 
   if (scope === 'following' && occISO > masterISO) {
     await store.update('events', master.id, { recurrence: serializeRule({ ...oldRule, until: addDays(occISO, -1) }) });
     const [s, e] = alignStart(rule, start, end);
     const next = rule ? serializeRule({ ...rule, ex: oldRule.ex.filter((d) => d >= occISO) }) : null;
-    return store.insert('events', { ...base(s, e), recurrence: next });
+    return store.insert('events', { ...base(s, e, false), recurrence: next });
   }
 
   // 모든 일정: 첫 일정을, 이 일정이 옮겨진 만큼 같이 옮긴다
@@ -112,7 +118,7 @@ export async function applyEdit({ occ, fields, start, end, rule, scope }) {
 export function createEvent({ fields, start, end, rule }) {
   const [s, e] = alignStart(rule, start, end);
   return store.insert('events', {
-    ...fields,
+    ...clean(fields, false),
     starts_at: s.toISOString(),
     ends_at: e.toISOString(),
     recurrence: rule ? serializeRule({ ...rule, ex: [] }) : null,
@@ -137,7 +143,7 @@ export async function deleteEvent({ occ, scope }) {
 // ── 끌어서 옮기기 (시간 또는 날짜만 바뀜) ──
 // 반복 일정이면 범위를 묻고, 취소하면 false
 export async function moveEvent(occ, newStart, newEnd) {
-  const fields = { title: occ.title, all_day: occ.all_day, color: occ.color, note: occ.note };
+  const fields = { title: occ.title, all_day: occ.all_day, color: occ.color, note: occ.note, is_holiday: !!occ.is_holiday };
   const opts = scopeOptions(occ);
   let scope = 'all';
   if (opts) {

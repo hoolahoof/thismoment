@@ -56,7 +56,7 @@ export function setupSearch(root, ctx) {
               <span class="srch-date">${label(iso)}${upcoming ? '' : '<span class="small">지난 일정</span>'}</span>
               <span class="srch-main">
                 <span class="row-title">${esc(ev.title)}${rule ? REPEAT_ICON : ''}</span>
-                <span class="muted small">${eventTime(ev)}${rule ? ` · ${describeRule(rule)}` : ''}${ev.note ? ` · ${esc(ev.note)}` : ''}</span>
+                <span class="muted small">${ev.is_holiday ? '휴일 · ' : ''}${eventTime(ev)}${rule ? ` · ${describeRule(rule)}` : ''}${ev.note ? ` · ${esc(ev.note)}` : ''}</span>
               </span>
             </button>
           </li>`;

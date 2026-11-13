@@ -6,7 +6,8 @@ import { lockSupported, isLockEnabled, enableLock, disableLock } from './lock.js
 import { esc, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
 import { holidayOn, alarmOn, nextRing, nextSkip } from './holidays.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
-import { calendar, holidayDialogHTML, setupHolidayDialog } from './calendar.js';
+import { calendar, setSelected } from './calendar.js';
+import { localISO, lastDayISO, nextOccurrenceISO } from './recur.js';
 import { day } from './day.js';
 
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
@@ -126,7 +127,7 @@ const alarm = {
           <div class="day-chips">${WD.map((w, i) => `<button type="button" class="chip" data-day="${i}" aria-pressed="${formDays.includes(i)}">${w}</button>`).join('')}</div>
         </fieldset>
         <label class="check"><input type="checkbox" name="skip_holidays" checked> 공휴일에는 울리지 않기</label>
-        <label class="check"><input type="checkbox" name="skip_custom" checked> 내가 지정한 휴일에도 울리지 않기</label>
+        <label class="check"><input type="checkbox" name="skip_custom" checked> 내가 휴일로 표시한 날에도 울리지 않기</label>
         <button class="btn primary" type="submit">저장</button>
         <p class="form-msg" role="status"></p>
       </form>
@@ -283,12 +284,9 @@ const settings = {
         <div class="kv"><span>대체공휴일 포함</span><button class="switch" data-setting="include_substitute" aria-label="대체공휴일 포함"><span></span></button></div>
         <div class="kv"><span>선거일 · 임시공휴일 포함</span><button class="switch" data-setting="include_temporary" aria-label="선거일·임시공휴일 포함"><span></span></button></div>
       </section>
-      <div class="section-row">
-        <h2 class="section-title">내가 지정한 휴일 (빨간 날)</h2>
-        <button class="btn pill" data-action="add-holiday" type="button">+ 추가</button>
-      </div>
+      <h2 class="section-title">내가 만든 휴일</h2>
       <ul class="list" data-slot="my-holidays"></ul>
-      ${holidayDialogHTML()}
+      <p class="muted small">일정을 추가할 때 ‘하루 종일’ 옆의 <strong>휴일</strong> 버튼을 누르면 빨간 날이 돼요.</p>
       <h2 class="section-title">아이폰 시계 알람 연동</h2>
       <section class="card stack">
         <p class="muted small">단축어 "ThisMoment 알람 동기화"에 넣을 값이에요. 각각 복사해서 붙여넣으세요. 토큰은 다른 사람에게 보여주지 마세요.</p>
@@ -307,7 +305,6 @@ const settings = {
       }
     });
 
-    const holDialog = setupHolidayDialog(el);
     el.addEventListener('click', async (e) => {
       const sw = e.target.closest('[data-setting]');
       if (sw) {
@@ -321,18 +318,15 @@ const settings = {
         }
         return;
       }
-      const hb = e.target.closest('[data-holiday]');
+      const hb = e.target.closest('[data-hol-date]');
       if (hb) {
-        const h = store.getState().data.custom_holidays.find((x) => x.id === hb.dataset.holiday);
-        if (h) holDialog.open(h);
+        setSelected(hb.dataset.holDate);
+        location.hash = '#/calendar';
         return;
       }
       const b = e.target.closest('[data-action]');
       if (!b) return;
-      if (b.dataset.action === 'add-holiday') {
-        const t = toISODate(todayLocal());
-        holDialog.open(null, t, t);
-      } else if (b.dataset.action === 'logout') {
+      if (b.dataset.action === 'logout') {
         if (confirm('로그아웃할까요? 다음에 다시 로그인해야 해요.')) await logout();
       } else if (b.dataset.action === 'lock') {
         const user = store.getState().user;
@@ -391,20 +385,27 @@ const settings = {
     const st = s.data.settings[0];
     el.querySelectorAll('[data-setting]').forEach((b) => b.setAttribute('aria-pressed', String(!!st?.[b.dataset.setting])));
 
-    const mine = [...s.data.custom_holidays].sort((a, b) => a.start_date.localeCompare(b.start_date));
+    const mine = s.data.events.filter((e) => e.is_holiday).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
     const md = (iso) => `${Number(iso.slice(5, 7))}월 ${Number(iso.slice(8, 10))}일`;
+    const todayISO = toISODate(todayLocal());
     el.querySelector('[data-slot=my-holidays]').innerHTML = mine.length
-      ? mine.map((h) => `
+      ? mine.map((h) => {
+          const a = localISO(h.starts_at);
+          const b = lastDayISO(h);
+          const yearly = (h.recurrence || '').startsWith('FREQ=YEARLY');
+          const jump = nextOccurrenceISO(h, todayISO) ?? a;
+          return `
           <li>
-            <button class="card row hol-row" data-holiday="${h.id}">
+            <button class="card row hol-row" data-hol-date="${jump}">
               <span class="hol-dot" aria-hidden="true"></span>
               <span class="row-main">
-                <span class="row-title">${esc(h.name)}</span>
-                <span class="muted small">${h.yearly ? '매년 ' : `${h.start_date.slice(0, 4)}년 `}${md(h.start_date)}${h.end_date !== h.start_date ? ` – ${md(h.end_date)}` : ''}</span>
+                <span class="row-title">${esc(h.title)}</span>
+                <span class="muted small">${yearly ? '매년 ' : `${a.slice(0, 4)}년 `}${md(a)}${b !== a ? ` – ${md(b)}` : ''}</span>
               </span>
             </button>
-          </li>`).join('')
-      : '<li class="empty muted">아직 없어요. 캘린더에서 날짜를 누르거나 길게 눌러 끌어서 지정할 수도 있어요.</li>';
+          </li>`;
+        }).join('')
+      : '<li class="empty muted">아직 없어요.</li>';
   },
 };
 

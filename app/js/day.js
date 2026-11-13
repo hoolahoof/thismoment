@@ -271,7 +271,7 @@ export const day = {
       const di = toISODate(d);
       const dh = holidayOn(di, s);
       const red = dh.kr || dh.custom || i === 0;
-      const hasEv = eventsOn(di, s.data.events).length > 0;
+      const hasEv = eventsOn(di, s.data.events).some((e) => !e.is_holiday);
       return `
         <button class="wday ${di === iso ? 'sel' : ''} ${di === todayISO ? 'is-today' : ''} ${red ? 'red' : i === 6 ? 'blue' : ''}"
           data-date="${di}" aria-pressed="${di === iso}" aria-label="${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[i]}요일">
@@ -285,7 +285,7 @@ export const day = {
     const evs = eventsOn(iso, s.data.events);
     el.querySelector('[data-slot=allday]').innerHTML = evs
       .filter((ev) => ev.all_day)
-      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">하루 종일 · ${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</button>`)
+      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}">${ev.is_holiday ? '휴일' : '하루 종일'} · ${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</button>`)
       .join('');
 
     // 시간 블록
