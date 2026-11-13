@@ -526,3 +526,5 @@ dialog.sheet.tall { height: 92dvh; }
 .icon-btn.pin { color: var(--color-muted); }
 .icon-btn.pin.on { color: var(--color-accent); }
 .icon-btn.pin.on svg { fill: currentColor; }
+
+.pager { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }

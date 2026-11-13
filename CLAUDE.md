@@ -30,7 +30,7 @@
 SQL은 `supabase/`에 번호순. 사용자가 SQL Editor에서 직접 실행한다.
 - `schema.sql` events·todos·ddays·custom_holidays(더 이상 안 씀)·settings + RLS + 실시간 + `get_widget_data`
 - `002` kr_holidays·alarms·`get_alarm_plan`, `003` 공휴일 매일 갱신 예약, `004` 단축어용 응답,
-  `005` events.is_holiday(휴일=일정의 한 종류), `006` alarms.once_on(한 번만 알람) + 자동 삭제 예약, `007` get_widget_data가 반복·휴일 일정과 공휴일을 돌려줌(위젯용), `008` 위젯에 고정할 디데이 1개(show_in_widget을 '고정' 표시로 사용, 고정 없으면 가장 가까운 것)
+  `005` events.is_holiday(휴일=일정의 한 종류), `006` alarms.once_on(한 번만 알람) + 자동 삭제 예약, `007` get_widget_data가 반복·휴일 일정과 공휴일을 돌려줌(위젯용), `008` 위젯에 고정할 디데이 1개(show_in_widget을 '고정' 표시로 사용, 고정 없으면 가장 가까운 것), `009` 고정한 디데이가 지나면 자동으로 가장 가까이 남은 것으로
 - **006 실행 여부는 미확인** (실행 전엔 한 번만 알람 저장만 실패, 나머지는 정상)
 - 공휴일: Edge Function `sync-holidays`(공공데이터포털 특일 정보)가 매일 03시 갱신. 키는 Supabase 시크릿 `DATA_GO_KR_KEY` (**저장소에 절대 넣지 말 것**, service_role 키도 마찬가지)
 

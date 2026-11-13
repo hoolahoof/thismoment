@@ -35,6 +35,11 @@ const dday = {
       <div data-slot="hero"></div>
       <h2 class="section-title">전체</h2>
       <ul class="list" data-slot="list"></ul>
+      <nav class="pager" data-slot="pager" aria-label="디데이 페이지" hidden>
+        <button class="btn pill" type="button" data-page="-1">이전</button>
+        <span class="muted small" data-slot="page-info"></span>
+        <button class="btn pill" type="button" data-page="1">다음</button>
+      </nav>
       <h2 class="section-title">디데이 추가</h2>
       <form class="card form inline-form" data-slot="form">
         <label>이름<input name="title" required maxlength="40" placeholder="예: 여행 출발"></label>
@@ -61,6 +66,13 @@ const dday = {
         msg.textContent = '저장하지 못했어요: ' + err.message;
         msg.classList.add('error');
       }
+    });
+
+    el.querySelector('[data-slot=pager]').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-page]');
+      if (!b) return;
+      el.dataset.page = String(Number(el.dataset.page || 0) + Number(b.dataset.page));
+      dday.update(el, store.getState());
     });
 
     el.querySelector('[data-slot=list]').addEventListener('click', async (e) => {
@@ -91,7 +103,9 @@ const dday = {
     const all = s.data.ddays;
     const upcoming = all.filter((d) => !d.count_up && daysUntil(d.target_date) >= 0)
       .sort((x, y) => x.target_date.localeCompare(y.target_date));
-    const hero = all.find((d) => d.show_in_widget) ?? upcoming[0]; // 위젯에 고정한 디데이 (없으면 가장 가까운 것)
+    // 위젯에 고정한 디데이 (지나갔으면 자동으로 가장 가까이 남은 디데이로 바뀐다)
+    const pinned = all.find((d) => d.show_in_widget && (d.count_up || daysUntil(d.target_date) >= 0));
+    const hero = pinned ?? upcoming[0];
     el.querySelector('[data-slot=hero]').innerHTML = hero ? (() => {
       const n = daysUntil(hero.target_date);
       const near = !hero.count_up && n >= 0 && n <= 7;
@@ -103,9 +117,20 @@ const dday = {
       </section>`;
     })() : '';
 
-    const list = [...all].sort((a, b) => Math.abs(daysUntil(a.target_date)) - Math.abs(daysUntil(b.target_date)));
+    // 정렬: 다가오는 것(가까운 순) → 기념일 세기 → 지난 것(최근 순)
+    const group = (d) => (!d.count_up && daysUntil(d.target_date) >= 0 ? 0 : d.count_up ? 1 : 2);
+    const list = [...all].sort((a, b) => group(a) - group(b) || (group(a) === 2 ? b.target_date.localeCompare(a.target_date) : a.target_date.localeCompare(b.target_date)));
+    const PAGE = 8;
+    const pages = Math.max(1, Math.ceil(list.length / PAGE));
+    const page = Math.min(Math.max(Number(el.dataset.page || 0), 0), pages - 1);
+    el.dataset.page = String(page);
+    const pager = el.querySelector('[data-slot=pager]');
+    pager.hidden = pages <= 1;
+    pager.querySelector('[data-page="-1"]').disabled = page === 0;
+    pager.querySelector('[data-page="1"]').disabled = page >= pages - 1;
+    el.querySelector('[data-slot=page-info]').textContent = `${page + 1} / ${pages} (전체 ${list.length}개)`;
     el.querySelector('[data-slot=list]').innerHTML = list.length
-      ? list
+      ? list.slice(page * PAGE, page * PAGE + PAGE)
           .map(
             (d) => `
         <li class="card row dday-row ${!d.count_up && daysUntil(d.target_date) >= 0 && daysUntil(d.target_date) <= 7 ? 'is-near' : ''}">
