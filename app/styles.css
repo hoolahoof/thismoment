@@ -493,3 +493,6 @@ dialog.sheet.tall { height: 92dvh; }
 .dday-bar-note { display: flex; justify-content: space-between; margin-top: 4px; }
 .dday-row.is-near .dday-num { color: var(--color-danger); }
 .widget-sw { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+/* 안내 글: 단어 중간에서 끊지 않고 줄바꿈 */
+.muted.small, .cal-tip { word-break: keep-all; overflow-wrap: anywhere; line-height: 1.6; }

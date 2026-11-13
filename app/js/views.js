@@ -166,7 +166,7 @@ const alarm = {
       </form>
       <ul class="list" data-slot="list"></ul>
       <a class="btn block-link" href="${SHORTCUT_RUN_URL}">알람 바꾼 뒤 지금 시계에 반영</a>
-      <p class="muted small">실제로 울리는 건 아이폰 시계 앱이에요. 매일 0시에 단축어가 자동으로 맞춰줘요. (설정 → 아이폰 시계 알람 연동)</p>`;
+      <p class="muted small">실제로 울리는 건 아이폰 시계 앱이에요.<br>매일 0시에 단축어가 자동으로 맞춰줘요.<br>(설정 → 아이폰 시계 알람 연동)</p>`;
 
     const form = el.querySelector('[data-slot=form]');
     const toggleBtn = el.querySelector('[data-action=new]');
@@ -329,7 +329,7 @@ const settings = {
       <p class="muted small">일정을 추가할 때 ‘하루 종일’ 옆의 <strong>휴일</strong> 버튼을 누르면 빨간 날이 돼요.</p>
       <h2 class="section-title">아이폰 시계 알람 연동</h2>
       <section class="card stack">
-        <p class="muted small">단축어 "ThisMoment 알람 동기화"에 넣을 값이에요. 각각 복사해서 붙여넣으세요. 토큰은 다른 사람에게 보여주지 마세요.</p>
+        <p class="muted small">단축어 "ThisMoment 알람 동기화"에 넣을 값이에요.<br>각각 복사해서 붙여넣으세요.<br>토큰은 다른 사람에게 보여주지 마세요.</p>
         <div class="copy-row"><span>① 주소</span><button class="btn" data-copy="url" type="button">복사</button></div>
         <div class="copy-row"><span>② apikey 값</span><button class="btn" data-copy="apikey" type="button">복사</button></div>
         <div class="copy-row"><span>③ 토큰 <code data-slot="token">…</code></span><button class="btn" data-copy="token" type="button">복사</button></div>

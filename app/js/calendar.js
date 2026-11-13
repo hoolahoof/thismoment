@@ -73,7 +73,7 @@ export const calendar = {
         </div>
         <ul class="list" data-slot="day-list"></ul>
       </section>
-      <p class="muted small center cal-tip" data-slot="tip">날짜를 길게 누른 채 끌면 여러 날 일정을 만들고, 일정을 길게 눌러 끌면 다른 날로 옮겨요. 휴일은 일정 추가 창의 ‘휴일’ 버튼으로 만들어요.</p>
+      <p class="muted small center cal-tip" data-slot="tip">날짜를 길게 누른 채 끌면 여러 날 일정을 만들고,<br>일정을 길게 눌러 끌면 다른 날로 옮겨요.<br>휴일은 일정 추가 창의 ‘휴일’ 버튼으로 만들어요.</p>
       <button class="fab" data-action="add" aria-label="일정 추가">${icons.plus}</button>
       ${eventDialogHTML()}
       ${searchDialogHTML()}`;
