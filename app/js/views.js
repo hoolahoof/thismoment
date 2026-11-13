@@ -114,7 +114,7 @@ const dday = {
             <span class="muted small">${fmtDate(d.target_date)}${d.count_up ? ' 부터' : ''}</span>
           </div>
           <strong class="dday-num">${ddayLabel(d)}</strong>
-          <button class="icon-btn pin ${d.show_in_widget ? 'on' : ''}" data-action="widget" data-id="${d.id}" aria-pressed="${!!d.show_in_widget}" aria-label="${d.show_in_widget ? '위젯 고정 해제' : '위젯에 고정'}" title="위젯에 고정">${icons.star}</button>
+          <div class="widget-sw"><button class="switch" data-action="widget" data-id="${d.id}" aria-pressed="${!!d.show_in_widget}" aria-label="${d.show_in_widget ? '위젯 고정 해제' : '위젯에 고정'}" title="위젯에 고정"><span></span></button></div>
           <button class="icon-btn" data-action="delete" data-id="${d.id}" aria-label="${esc(d.title)} 삭제">${icons.trash}</button>
         </li>`
           )
