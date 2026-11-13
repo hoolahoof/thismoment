@@ -606,3 +606,10 @@ dialog.sheet.tall { height: 92dvh; }
 .emo-btn { flex: none; margin-left: auto; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 24px; line-height: 1; cursor: pointer; }
 .emo-btn.empty { color: var(--color-line-strong); font-size: 18px; border: 1px dashed var(--color-line-strong); width: 32px; height: 32px; border-radius: 16px; }
 .emo-btn:active { transform: scale(0.9); }
+
+/* 이모티콘 창: 카테고리를 화살표로 넘기고, 목록은 위아래로 스크롤 */
+.emo-nav { display: flex; align-items: center; gap: 4px; }
+.emo-nav .emo-tabs { flex: 1 1 auto; min-width: 0; scroll-behavior: smooth; }
+.emo-arrow { flex: none; width: 36px; height: 36px; border-radius: 18px; border: 1px solid var(--color-line-strong); background: var(--color-surface); font-size: 22px; line-height: 1; cursor: pointer; color: var(--color-text); }
+.emo-arrow:active { background: var(--color-surface-2); }
+.emo-grid { max-height: 252px; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
