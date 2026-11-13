@@ -6,8 +6,9 @@
 // 주의: TOKEN 은 비밀이에요. 이 파일은 비워 둔 채로 저장소에 있고, 채운 건 폰의 Scriptable 에만 두세요.
 // 서버 쪽은 supabase/007_widget_data.sql 을 먼저 실행해야 해요.
 
-const TOKEN = '여기에_토큰_붙여넣기';
-const APIKEY = '여기에_apikey_붙여넣기';
+// 로더(widget/thismoment-loader.js)로 실행하면 값이 거기서 넘어온다. 이 파일을 직접 쓰면 아래 두 줄을 채우세요.
+const TOKEN = globalThis.TM_CONFIG?.token ?? '여기에_토큰_붙여넣기';
+const APIKEY = globalThis.TM_CONFIG?.apikey ?? '여기에_apikey_붙여넣기';
 const BASE = 'https://bvqdpkfdmwzszxzzuupz.supabase.co/rest/v1/rpc/get_widget_data';
 
 // ── 반복 일정 계산 (앱의 recur.js 와 같은 규칙) ──
@@ -233,7 +234,7 @@ function build(data) {
     body.addSpacer();
   }
 
-  w.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
+  w.refreshAfterDate = new Date(Date.now() + 5 * 60 * 1000);
   return w;
 }
 
