@@ -498,3 +498,7 @@ dialog.sheet.tall { height: 92dvh; }
 
 /* 안내 글: 단어 중간에서 끊지 않고 줄바꿈 */
 .muted.small, .cal-tip { word-break: keep-all; overflow-wrap: anywhere; line-height: 1.6; }
+
+.form-title { font-size: var(--font-size-md); font-weight: var(--font-weight-bold); }
+.alarm-btns { display: flex; }
+.alarm-btns .icon-btn { width: 40px; }

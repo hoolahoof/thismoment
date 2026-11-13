@@ -40,6 +40,7 @@ export const icons = {
   dday: svg('<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'),
   settings: svg('<path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4"/>'),
   alarm: svg('<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15zM10 21h4"/>'),
+  edit: svg('<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>', 2.2),
   trash: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
   plane: svg('<path d="M21 4L3 11l7 2.5L12.5 21zM10 13.5L21 4"/>'),

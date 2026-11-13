@@ -137,9 +137,11 @@ const onceWhen = (iso) => {
 const alarm = {
   mount(el) {
     let formDays = [1, 2, 3, 4, 5];
+    let editingId = null; // 수정 중인 알람 id (없으면 새로 만들기)
     el.innerHTML = `
       ${header('알람', `<button class="btn primary" data-action="new" aria-expanded="false">${icons.plus}추가</button>`)}
       <form class="card form" data-slot="form" hidden>
+        <h2 class="form-title" data-slot="form-title">새 알람</h2>
         <div class="form-row">
           <label>시간<input type="time" name="time" value="07:00" required></label>
           <label class="grow">이름<input name="label" maxlength="30" placeholder="예: 출근"></label>
@@ -187,6 +189,8 @@ const alarm = {
     };
     // 취소: 입력한 내용을 비우고 창을 닫는다
     form.querySelector('[data-action=cancel-new]').addEventListener('click', () => {
+      editingId = null;
+      form.querySelector('[data-slot=form-title]').textContent = '새 알람';
       formDays = [1, 2, 3, 4, 5];
       form.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(formDays.includes(Number(c.dataset.day)))));
       form.elements.namedItem('label').value = '';
@@ -226,7 +230,13 @@ const alarm = {
         row.once_on = toISODate(at > now ? todayLocal() : new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
       }
       try {
-        await store.insert('alarms', row);
+        if (editingId) {
+          await store.update('alarms', editingId, { ...row, once_on: row.once_on ?? null });
+          editingId = null;
+          form.querySelector('[data-slot=form-title]').textContent = '새 알람';
+        } else {
+          await store.insert('alarms', row);
+        }
         fe.namedItem('label').value = '';
         msg.textContent = '';
         msg.classList.remove('error');
@@ -243,6 +253,21 @@ const alarm = {
       if (!b) return;
       const a = store.getState().data.alarms.find((x) => x.id === b.dataset.id);
       if (!a) return;
+      if (b.dataset.action === 'edit') {
+        // 수정: 위쪽 입력창에 지금 값을 채워서 연다
+        editingId = a.id;
+        formDays = [...(a.days ?? [])];
+        form.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(formDays.includes(Number(c.dataset.day)))));
+        form.elements.namedItem('time').value = a.time.slice(0, 5);
+        form.elements.namedItem('label').value = a.label;
+        form.elements.namedItem('skip_holidays').checked = !!a.skip_holidays;
+        form.querySelector('[data-slot=form-title]').textContent = '알람 수정';
+        syncOnce();
+        form.hidden = false;
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        form.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        return;
+      }
       try {
         if (b.dataset.action === 'toggle') await store.update('alarms', a.id, { enabled: !a.enabled });
         else if (b.dataset.action === 'holiday') await store.update('alarms', a.id, { skip_holidays: !a.skip_holidays, skip_custom_holidays: !a.skip_holidays });
@@ -276,7 +301,10 @@ const alarm = {
             </div>
             <div class="alarm-side">
               <button class="switch" data-action="toggle" data-id="${a.id}" aria-pressed="${a.enabled}" aria-label="${esc(a.label)} 켜기"><span></span></button>
-              <button class="icon-btn" data-action="delete" data-id="${a.id}" aria-label="${esc(a.label)} 삭제">${icons.trash}</button>
+              <div class="alarm-btns">
+                <button class="icon-btn" data-action="edit" data-id="${a.id}" aria-label="${esc(a.label)} 수정">${icons.edit}</button>
+                <button class="icon-btn" data-action="delete" data-id="${a.id}" aria-label="${esc(a.label)} 삭제">${icons.trash}</button>
+              </div>
             </div>
           </li>`;
         }).join('')

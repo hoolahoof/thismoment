@@ -92,15 +92,15 @@ export function renderLock(root, { onUnlock, onPassword, onLogout }) {
       <div class="auth-brand">
         <img src="icons/icon-192.png" alt="" width="64" height="64">
         <h1>ThisMoment</h1>
-        <p>잠겨 있어요</p>
+        <p>Face ID 확인 중…</p>
       </div>
-      <button class="btn primary big" data-action="unlock">
+      <button class="btn primary big" data-action="unlock" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 16c1.5 1 3.5 1 5 0"/></svg>
         Face ID로 열기
       </button>
       <p class="form-msg center" role="status"></p>
-      <form class="card form" data-slot="pw" novalidate>
-        <label>또는 비밀번호로 열기<input type="password" name="password" autocomplete="current-password"></label>
+      <form class="card form" data-slot="pw" novalidate hidden>
+        <label>비밀번호로 열기<input type="password" name="password" autocomplete="current-password"></label>
         <button class="btn" type="submit">비밀번호로 열기</button>
       </form>
       <button class="link-btn" data-action="logout">로그아웃</button>
@@ -117,17 +117,26 @@ export function renderLock(root, { onUnlock, onPassword, onLogout }) {
       msg.textContent = err.message;
     }
   });
-  const unlock = async (silent) => {
+  // 바로 패스키(Face ID)를 시도하고, 안 되면 비밀번호 입력칸을 보여준다
+  const sub = root.querySelector('.auth-brand p');
+  const showFallback = (text) => {
+    sub.textContent = '비밀번호로 열어주세요';
+    msg.textContent = text;
+    root.querySelector('[data-slot=pw]').hidden = false;
+    root.querySelector('[data-action=unlock]').hidden = false;
+    root.querySelector('[data-action=unlock]').classList.remove('primary');
+    root.querySelector('[name=password]').focus({ preventScroll: true });
+  };
+  const unlock = async () => {
     try {
       msg.textContent = '';
+      sub.textContent = 'Face ID 확인 중…';
       await onUnlock();
     } catch (e) {
-      if (silent) return; // 자동 시도가 막힌 경우엔 버튼을 누르도록 조용히 둔다
-      msg.textContent = e?.name === 'NotAllowedError' ? '확인이 취소됐어요. 다시 눌러주세요.' : '확인하지 못했어요: ' + (e?.message ?? e);
+      showFallback(e?.name === 'NotAllowedError' ? 'Face ID를 쓰지 못했어요.' : 'Face ID를 쓸 수 없어요: ' + (e?.message ?? e));
     }
   };
-  root.querySelector('[data-action=unlock]').addEventListener('click', () => unlock(false));
+  root.querySelector('[data-action=unlock]').addEventListener('click', () => unlock());
   root.querySelector('[data-action=logout]').addEventListener('click', onLogout);
-  // 브라우저가 허용하면 바로 얼굴 확인을 띄운다(아이폰은 버튼을 눌러야 뜰 수 있음).
-  unlock(true);
+  unlock();
 }
