@@ -387,9 +387,6 @@ const settings = {
         <div class="kv"><span>대체공휴일 포함</span><button class="switch" data-setting="include_substitute" aria-label="대체공휴일 포함"><span></span></button></div>
         <div class="kv"><span>선거일 · 임시공휴일 포함</span><button class="switch" data-setting="include_temporary" aria-label="선거일·임시공휴일 포함"><span></span></button></div>
       </section>
-      <h2 class="section-title">내가 만든 휴일</h2>
-      <ul class="list" data-slot="my-holidays"></ul>
-      <p class="muted small">일정을 추가할 때 ‘하루 종일’ 옆의 <strong>휴일</strong> 버튼을 누르면 빨간 날이 돼요.</p>
       <h2 class="section-title">아이폰 시계 알람 연동</h2>
       <section class="card stack">
         <p class="muted small">단축어 "ThisMoment 알람 동기화"에 넣을 값이에요.<br>각각 복사해서 붙여넣으세요.<br>토큰은 다른 사람에게 보여주지 마세요.</p>
@@ -458,12 +455,6 @@ const settings = {
         }
         return;
       }
-      const hb = e.target.closest('[data-hol-date]');
-      if (hb) {
-        setSelected(hb.dataset.holDate);
-        location.hash = '#/calendar';
-        return;
-      }
       const b = e.target.closest('[data-action]');
       if (!b) return;
       if (b.dataset.action === 'logout') {
@@ -525,27 +516,6 @@ const settings = {
     const st = s.data.settings[0];
     el.querySelectorAll('[data-setting]').forEach((b) => b.setAttribute('aria-pressed', String(!!st?.[b.dataset.setting])));
 
-    const mine = s.data.events.filter((e) => e.is_holiday).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-    const md = (iso) => `${Number(iso.slice(5, 7))}월 ${Number(iso.slice(8, 10))}일`;
-    const todayISO = toISODate(todayLocal());
-    el.querySelector('[data-slot=my-holidays]').innerHTML = mine.length
-      ? mine.map((h) => {
-          const a = localISO(h.starts_at);
-          const b = lastDayISO(h);
-          const yearly = (h.recurrence || '').startsWith('FREQ=YEARLY');
-          const jump = nextOccurrenceISO(h, todayISO) ?? a;
-          return `
-          <li>
-            <button class="card row hol-row" data-hol-date="${jump}">
-              <span class="hol-dot" aria-hidden="true"></span>
-              <span class="row-main">
-                <span class="row-title">${esc(h.title)}</span>
-                <span class="muted small">${yearly ? '매년 ' : `${a.slice(0, 4)}년 `}${md(a)}${b !== a ? ` – ${md(b)}` : ''}</span>
-              </span>
-            </button>
-          </li>`;
-        }).join('')
-      : '<li class="empty muted">아직 없어요.</li>';
   },
 };
 
