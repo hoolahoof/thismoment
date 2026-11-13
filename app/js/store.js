@@ -57,12 +57,35 @@ async function loadAll() {
 
 let channel = null;
 let started = false;
+let pruneTimer = null;
+const pruning = new Set();
+const PRUNE_AFTER_MS = 10 * 60 * 1000; // 울릴 시각이 지나고 10분 뒤
+
+// 요일 없이 한 번만 울리는 알람은 시간이 지나면 지운다.
+// (웹앱은 아이폰에서 알람을 껐는지 알 수 없어서, 울릴 시각이 지난 뒤 10분을 기준으로 한다)
+export async function pruneExpiredAlarms() {
+  const now = Date.now();
+  for (const a of [...state.data.alarms]) {
+    if (!a.once_on || (a.days && a.days.length)) continue;
+    const at = new Date(`${a.once_on}T${a.time.slice(0, 5)}`).getTime();
+    if (now <= at + PRUNE_AFTER_MS || pruning.has(a.id)) continue;
+    pruning.add(a.id);
+    try {
+      await remove('alarms', a.id);
+    } catch (e) {
+      console.warn('지난 알람 삭제 실패', e);
+    } finally {
+      pruning.delete(a.id);
+    }
+  }
+}
 
 async function resync() {
   if (!state.user) return;
   try {
     setStatus('syncing');
     await loadAll();
+    pruneExpiredAlarms();
     setStatus(channel && channel.state === 'joined' ? 'live' : 'offline');
   } catch (e) {
     console.error(e);
@@ -88,6 +111,9 @@ export async function start(user) {
     else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED') setStatus('offline');
   });
 
+  clearInterval(pruneTimer);
+  pruneTimer = setInterval(pruneExpiredAlarms, 60000);
+
   if (!started) {
     started = true;
     window.addEventListener('online', resync);
@@ -99,6 +125,7 @@ export async function start(user) {
 }
 
 export async function stop() {
+  clearInterval(pruneTimer);
   if (channel) await supabase.removeChannel(channel);
   channel = null;
   state.user = null;

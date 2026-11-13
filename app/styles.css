@@ -521,3 +521,7 @@ a.btn.pill { text-decoration: none; }
 .quote-author::before { content: '— '; }
 .credits { margin-top: 4px; }
 @media (prefers-reduced-motion: reduce) { .quote-body { transition: none; } }
+
+/* ── 명언 닫는 따옴표 · 한 번만 알람 ── */
+.quote-mark-end { align-self: flex-start; margin-left: 2px; }
+.stack-form { display: flex; flex-direction: column; gap: 12px; }

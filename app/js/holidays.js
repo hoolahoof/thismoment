@@ -25,10 +25,14 @@ export function holidayOn(iso, s) {
   return { kr, custom: mine ? mine.title : null };
 }
 
-// 알람이 그 날 울리는지와 이유
+// 요일을 하나도 고르지 않은 알람 = 한 번만 울리고 자동으로 지워지는 알람 (울릴 날짜는 once_on)
+export const isOnce = (a) => !a.days || a.days.length === 0;
+
+// 알람이 그 날 울리는지와 이유 (한 번만 알람은 공휴일과 상관없이 정한 날에 울린다)
 export function alarmOn(a, iso, s) {
   const dow = parseDate(iso).getDay();
   if (!a.enabled) return { ring: false, reason: 'off' };
+  if (isOnce(a)) return a.once_on === iso ? { ring: true } : { ring: false, reason: 'not_today' };
   if (!a.days.includes(dow)) return { ring: false, reason: 'not_today' };
   const h = holidayOn(iso, s);
   if (a.skip_holidays && h.kr) return { ring: false, reason: 'holiday', name: h.kr };
@@ -38,8 +42,10 @@ export function alarmOn(a, iso, s) {
 
 // 지금 이후 가장 먼저 울리는 날짜 (최대 400일 탐색)
 export function nextRing(a, s) {
-  if (!a.enabled || !a.days.length) return null;
+  if (!a.enabled) return null;
   const now = new Date();
+  if (isOnce(a)) return a.once_on && new Date(`${a.once_on}T${a.time.slice(0, 5)}`) > now ? a.once_on : null;
+  if (!a.days.length) return null;
   const hhmm = a.time.slice(0, 5);
   const d = todayLocal();
   for (let i = 0; i < 400; i++) {

@@ -41,6 +41,7 @@ export const home = {
           <span class="quote-text" data-slot="q-text"></span>
           <span class="quote-author" data-slot="q-author"></span>
         </span>
+        <span class="quote-mark quote-mark-end" aria-hidden="true">”</span>
       </button>
 
       <header class="page-head home-head">

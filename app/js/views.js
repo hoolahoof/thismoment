@@ -4,7 +4,7 @@ import * as store from './store.js';
 import { logout } from './app.js';
 import { lockSupported, isLockEnabled, enableLock, disableLock } from './lock.js';
 import { esc, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
-import { nextRing } from './holidays.js';
+import { nextRing, isOnce } from './holidays.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
 import { calendar, setSelected } from './calendar.js';
 import { localISO, lastDayISO, nextOccurrenceISO } from './recur.js';
@@ -111,6 +111,11 @@ const shortDate = (iso) => {
   const d = new Date(iso + 'T00:00:00');
   return `${d.getMonth() + 1}/${d.getDate()} (${WD[d.getDay()]})`;
 };
+const onceWhen = (iso) => {
+  const t = toISODate(todayLocal());
+  const tm = new Date(todayLocal().getFullYear(), todayLocal().getMonth(), todayLocal().getDate() + 1);
+  return iso === t ? '오늘' : iso === toISODate(tm) ? '내일' : shortDate(iso);
+};
 
 const alarm = {
   mount(el) {
@@ -126,8 +131,11 @@ const alarm = {
           <legend>반복 요일</legend>
           <div class="day-chips">${WD.map((w, i) => `<button type="button" class="chip" data-day="${i}" aria-pressed="${formDays.includes(i)}">${w}</button>`).join('')}</div>
         </fieldset>
-        <label class="check"><input type="checkbox" name="skip_holidays" checked> 공휴일에는 울리지 않기</label>
-        <label class="check"><input type="checkbox" name="skip_custom" checked> 내가 휴일로 표시한 날에도 울리지 않기</label>
+        <p class="repeat-summary" data-slot="once-hint" hidden>요일을 고르지 않으면 <strong>한 번만</strong> 울려요. 울릴 시각이 지나고 10분 뒤에 자동으로 지워져요.</p>
+        <div class="stack-form" data-slot="repeat-opts">
+          <label class="check"><input type="checkbox" name="skip_holidays" checked> 공휴일에는 울리지 않기</label>
+          <label class="check"><input type="checkbox" name="skip_custom" checked> 내가 휴일로 표시한 날에도 울리지 않기</label>
+        </div>
         <button class="btn primary" type="submit">저장</button>
         <p class="form-msg" role="status"></p>
       </form>
@@ -148,24 +156,40 @@ const alarm = {
       const d = Number(b.dataset.day);
       formDays = formDays.includes(d) ? formDays.filter((x) => x !== d) : [...formDays, d];
       b.setAttribute('aria-pressed', String(formDays.includes(d)));
+      syncOnce();
     });
+    // 요일이 하나도 없으면 한 번만 울리는 알람
+    const syncOnce = () => {
+      const once = formDays.length === 0;
+      form.querySelector('[data-slot=once-hint]').hidden = !once;
+      form.querySelector('[data-slot=repeat-opts]').hidden = once;
+    };
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fe = form.elements;
       const msg = form.querySelector('.form-msg');
-      if (!formDays.length) {
-        msg.textContent = '요일을 하나 이상 골라주세요.';
+      const time = fe.namedItem('time').value;
+      if (!time) {
+        msg.textContent = '시간을 정해주세요.';
         msg.classList.add('error');
         return;
       }
+      const row = {
+        time,
+        label: fe.namedItem('label').value.trim() || '알람',
+        days: formDays,
+        skip_holidays: fe.namedItem('skip_holidays').checked,
+        skip_custom_holidays: fe.namedItem('skip_custom').checked,
+      };
+      if (!formDays.length) {
+        // 한 번만: 오늘 그 시각이 아직 안 지났으면 오늘, 지났으면 내일
+        const now = new Date();
+        const [h, m] = time.split(':').map(Number);
+        const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+        row.once_on = toISODate(at > now ? todayLocal() : new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+      }
       try {
-        await store.insert('alarms', {
-          time: fe.namedItem('time').value,
-          label: fe.namedItem('label').value.trim() || '알람',
-          days: formDays,
-          skip_holidays: fe.namedItem('skip_holidays').checked,
-          skip_custom_holidays: fe.namedItem('skip_custom').checked,
-        });
+        await store.insert('alarms', row);
         fe.namedItem('label').value = '';
         msg.textContent = '';
         msg.classList.remove('error');
@@ -205,11 +229,13 @@ const alarm = {
                 <span class="alarm-time">${a.time.slice(0, 5)}</span>
                 <span class="alarm-label">${esc(a.label)}</span>
               </div>
-              <span class="muted small">${daysText(a.days)}${next ? ` · 다음 ${shortDate(next)}` : ''}</span>
+              ${isOnce(a)
+                ? `<span class="muted small">한 번만 · ${a.once_on ? onceWhen(a.once_on) : ''} (울린 뒤 자동 삭제)</span>`
+                : `<span class="muted small">${daysText(a.days)}${next ? ` · 다음 ${shortDate(next)}` : ''}</span>
               <button class="badge ${a.skip_holidays ? 'badge-skip' : 'badge-ring'}" data-action="holiday" data-id="${a.id}"
                 aria-pressed="${a.skip_holidays}" aria-label="공휴일 설정 바꾸기">
                 ${a.skip_holidays ? '공휴일엔 안 울림' : '공휴일에도 울림'}
-              </button>
+              </button>`}
             </div>
             <div class="alarm-side">
               <button class="switch" data-action="toggle" data-id="${a.id}" aria-pressed="${a.enabled}" aria-label="${esc(a.label)} 켜기"><span></span></button>
