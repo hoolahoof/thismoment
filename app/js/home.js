@@ -11,8 +11,6 @@ import { emojiTag } from './emoji.js';
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const pad = (n) => String(n).padStart(2, '0');
 const MAX_TODOS = 8;
-// 기념일 세기: 이 날 이후로 며칠이 지났는지 (당일 = D+0)
-const SINCE = { label: '임찬규님 탄신일', date: '1997-04-25' };
 
 const dayWord = (iso, todayISO) => {
   if (iso === todayISO) return '오늘';
@@ -113,8 +111,16 @@ export const home = {
     const h = holidayOn(todayISO, s);
 
     // 기념일 세기 (명언 위)
-    const passed = Math.round((todayLocal() - parseDate(SINCE.date)) / 86400000);
-    el.querySelector('[data-slot=since]').innerHTML = `<span class="since-label"><i aria-hidden="true">✦</i>${esc(SINCE.label)}<i aria-hidden="true">✦</i></span><strong>D+${passed.toLocaleString('ko-KR')}</strong>`;
+    // 이름과 날짜는 설정 화면에서 입력한 값(서버 저장)을 쓴다. 비어 있으면 숨긴다.
+    const st = s.data.settings[0];
+    const sinceEl = el.querySelector('[data-slot=since]');
+    if (st?.since_date) {
+      const passed = Math.round((todayLocal() - parseDate(st.since_date)) / 86400000);
+      sinceEl.innerHTML = `<span class="since-label"><i aria-hidden="true">✦</i>${esc(st.since_label || '기념일')}<i aria-hidden="true">✦</i></span><strong>D+${passed.toLocaleString('ko-KR')}</strong>`;
+      sinceEl.hidden = false;
+    } else {
+      sinceEl.hidden = true;
+    }
 
     // 머리글
     el.querySelector('[data-slot=date]').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일`;

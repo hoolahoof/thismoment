@@ -365,6 +365,18 @@ const settings = {
           </div>
         </div>
       </section>
+      <h2 class="section-title">홈 기념일 세기</h2>
+      <form class="card form" data-slot="since-form" novalidate>
+        <p class="muted small">정한 날 이후로 며칠이 지났는지 홈 맨 위에 보여줘요. (당일은 D+0)</p>
+        <label>이름<input name="since_label" maxlength="20" placeholder="예: 우리 사귄 날" autocomplete="off"></label>
+        <label>시작한 날<input type="date" name="since_date"></label>
+        <p class="form-msg" role="status"></p>
+        <div class="sheet-actions">
+          <button class="btn" type="button" data-action="since-clear">지우기</button>
+          <span class="grow"></span>
+          <button class="btn primary" type="submit">저장</button>
+        </div>
+      </form>
       <h2 class="section-title">알림</h2>
       <section class="card stack">
         <div class="kv">
@@ -428,6 +440,37 @@ const settings = {
       }
       pushSw.disabled = false;
       refreshPush().catch(() => {});
+    });
+
+    // 홈 기념일 세기 저장
+    const sinceForm = el.querySelector('[data-slot=since-form]');
+    const sinceMsg = sinceForm.querySelector('.form-msg');
+    const saveSince = async (label, date) => {
+      const st = store.getState().data.settings[0];
+      if (!st) return;
+      try {
+        await store.update('settings', st.user_id, { since_label: label || null, since_date: date || null });
+        sinceMsg.classList.remove('error');
+        sinceMsg.textContent = date ? '저장했어요.' : '지웠어요.';
+      } catch (err) {
+        sinceMsg.classList.add('error');
+        sinceMsg.textContent = '저장하지 못했어요: ' + err.message + ' (SQL 012 를 실행했는지 확인해 주세요)';
+      }
+    };
+    sinceForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = sinceForm.elements;
+      if (!f.namedItem('since_date').value) {
+        sinceMsg.classList.add('error');
+        sinceMsg.textContent = '시작한 날을 골라 주세요.';
+        return;
+      }
+      saveSince(f.namedItem('since_label').value.trim(), f.namedItem('since_date').value);
+    });
+    sinceForm.querySelector('[data-action=since-clear]').addEventListener('click', () => {
+      sinceForm.elements.namedItem('since_label').value = '';
+      sinceForm.elements.namedItem('since_date').value = '';
+      saveSince('', '');
     });
 
     const paintTheme = () => {
@@ -495,6 +538,12 @@ const settings = {
     el.querySelector('[data-slot=email]').textContent = s.user ? '비밀번호로 연결됨' : '';
     if (s.user) el.querySelector('[data-action=lock]').setAttribute('aria-pressed', String(isLockEnabled(s.user.id)));
     el.querySelector('[data-slot=status]').innerHTML = statusBadge(s.status);
+    // 기념일 세기 입력칸: 입력 중이 아닐 때만 저장된 값으로 채운다
+    const sf = el.querySelector('[data-slot=since-form]');
+    if (sf && !sf.contains(document.activeElement)) {
+      sf.elements.namedItem('since_label').value = s.data.settings[0]?.since_label ?? '';
+      sf.elements.namedItem('since_date').value = s.data.settings[0]?.since_date ?? '';
+    }
     const tok = s.data.settings[0]?.widget_token;
     el.querySelector('[data-slot=token]').textContent = tok ? tok.slice(0, 6) + '••••' : '없음';
 
