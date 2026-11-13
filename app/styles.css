@@ -613,3 +613,6 @@ dialog.sheet.tall { height: 92dvh; }
 .emo-arrow { flex: none; width: 36px; height: 36px; border-radius: 18px; border: 1px solid var(--color-line-strong); background: var(--color-surface); font-size: 22px; line-height: 1; cursor: pointer; color: var(--color-text); }
 .emo-arrow:active { background: var(--color-surface-2); }
 .emo-grid { max-height: 252px; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+
+/* 오른쪽 아래 + 버튼이 있는 화면은 맨 아래 내용이 버튼에 가리지 않게 여백을 더 둔다 */
+.view:has(.fab) { padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 96px); }
