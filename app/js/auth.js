@@ -30,11 +30,13 @@ export function renderAuth(root) {
           <h1>ThisMoment</h1>
           <p>${setup ? '처음 한 번만 비밀번호를 정해요' : '비밀번호를 입력해 주세요'}</p>
         </div>
-        <form class="card form" novalidate>
-          <input type="text" name="username" autocomplete="username" value="${esc(OWNER_EMAIL)}" hidden>
+        <form class="card form" novalidate autocomplete="off">
+          <!-- 아이폰이 "강력한 암호"를 자동으로 채우고 입력칸을 잠가버리지 않도록 new-password 를 쓰지 않는다 -->
           <label>비밀번호<input type="password" name="password" minlength="6" required
-            autocomplete="${setup ? 'new-password' : 'current-password'}"></label>
-          ${setup ? `<label>비밀번호 확인<input type="password" name="confirm" minlength="6" required autocomplete="new-password"></label>` : ''}
+            autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text"></label>
+          ${setup ? `<label>비밀번호 확인<input type="password" name="confirm" minlength="6" required
+            autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text"></label>` : ''}
+          <label class="check"><input type="checkbox" data-action="show"> 비밀번호 보기</label>
           <button class="btn primary" type="submit">${setup ? '비밀번호 만들기' : '열기'}</button>
           <p class="form-msg ${isError ? 'error' : ''}" role="status">${esc(message)}</p>
         </form>
@@ -48,7 +50,12 @@ export function renderAuth(root) {
     });
 
     const form = root.querySelector('form');
-    form.querySelector('input[name=password]').focus();
+    // 자동 포커스는 하지 않는다 (아이폰 홈 화면 앱에서 키보드가 꼬이는 원인)
+    form.querySelector('[data-action=show]').addEventListener('change', (e) => {
+      form.querySelectorAll('input[name=password], input[name=confirm]').forEach((i) => {
+        i.type = e.target.checked ? 'text' : 'password';
+      });
+    });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fd = new FormData(form);
