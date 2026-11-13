@@ -3,7 +3,7 @@
 import * as store from './store.js';
 import { logout } from './app.js';
 import { lockSupported, isLockEnabled, enableLock, disableLock } from './lock.js';
-import { esc, ddayIcon, parseDate, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
+import { esc, ddayIcon, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from './util.js';
 import { nextRing, isOnce } from './holidays.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
 import { calendar, setSelected } from './calendar.js';
@@ -87,15 +87,11 @@ const dday = {
     const hero = upcoming[0];
     el.querySelector('[data-slot=hero]').innerHTML = hero ? (() => {
       const n = daysUntil(hero.target_date);
-      const start = hero.created_at ? new Date(hero.created_at) : null;
-      const total = start ? Math.max(1, Math.round((parseDate(hero.target_date) - new Date(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000)) : 0;
-      const pct = total ? Math.min(100, Math.max(0, Math.round(((total - n) / total) * 100))) : 0;
       return `
       <section class="card dday-hero ${n <= 7 ? 'is-near' : ''}">
         <div class="dday-hero-top"><span class="dday-hero-title">${esc(hero.title)}</span><span class="dday-card-ic">${ddayIcon(hero.title)}</span></div>
         <div class="dday-hero-count">${ddayLabel(hero)}</div>
         <div class="dday-hero-date">${fmtDate(hero.target_date)}</div>
-        ${total ? `<div class="dday-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="진행률"><span style="width:${pct}%"></span></div><div class="dday-bar-note muted small"><span>등록일부터 ${pct}%</span><span>${n === 0 ? '오늘이에요' : `${n}일 남음`}</span></div>` : ''}
       </section>`;
     })() : '';
 
