@@ -119,6 +119,7 @@ const C = {
   muted: dyn('#5A6270', '#9AA3B2'),
   accent: dyn('#2A55C0', '#86A6F5'),
   danger: dyn('#B42318', '#F2998F'),
+  line: dyn('#D8DCE2', '#2B3038'),
 };
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const ddayLabel = (d) => (d.count_up ? `D+${-d.diff + 1}` : d.diff > 0 ? `D-${d.diff}` : d.diff === 0 ? 'D-Day' : `D+${-d.diff}`);
