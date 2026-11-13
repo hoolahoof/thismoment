@@ -35,8 +35,9 @@ export function alarmOn(a, iso, s) {
   if (isOnce(a)) return a.once_on === iso ? { ring: true } : { ring: false, reason: 'not_today' };
   if (!a.days.includes(dow)) return { ring: false, reason: 'not_today' };
   const h = holidayOn(iso, s);
+  // 공휴일 설정 하나로 법정 공휴일과 내가 만든 휴일을 함께 다룬다
   if (a.skip_holidays && h.kr) return { ring: false, reason: 'holiday', name: h.kr };
-  if (a.skip_custom_holidays && h.custom) return { ring: false, reason: 'custom', name: h.custom };
+  if (a.skip_holidays && h.custom) return { ring: false, reason: 'custom', name: h.custom };
   return { ring: true, holiday: h.kr || h.custom || null };
 }
 

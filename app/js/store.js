@@ -63,6 +63,18 @@ const PRUNE_AFTER_MS = 10 * 60 * 1000; // 울릴 시각이 지나고 10분 뒤
 
 // 요일 없이 한 번만 울리는 알람은 시간이 지나면 지운다.
 // (웹앱은 아이폰에서 알람을 껐는지 알 수 없어서, 울릴 시각이 지난 뒤 10분을 기준으로 한다)
+// 예전에는 공휴일/내 휴일 설정이 따로였다. 서버와 앱이 같게 보도록 skip_holidays 값 하나로 맞춘다.
+async function alignHolidayFlags() {
+  for (const a of [...state.data.alarms]) {
+    if (a.skip_custom_holidays === a.skip_holidays) continue;
+    try {
+      await update('alarms', a.id, { skip_custom_holidays: a.skip_holidays });
+    } catch (e) {
+      console.warn('알람 설정 맞추기 실패', e);
+    }
+  }
+}
+
 export async function pruneExpiredAlarms() {
   const now = Date.now();
   for (const a of [...state.data.alarms]) {
@@ -86,6 +98,7 @@ async function resync() {
     setStatus('syncing');
     await loadAll();
     pruneExpiredAlarms();
+    alignHolidayFlags();
     setStatus(channel && channel.state === 'joined' ? 'live' : 'offline');
   } catch (e) {
     console.error(e);

@@ -134,7 +134,7 @@ const alarm = {
         <p class="repeat-summary" data-slot="once-hint" hidden>요일을 고르지 않으면 <strong>한 번만</strong> 울려요. 울릴 시각이 지나고 10분 뒤에 자동으로 지워져요.</p>
         <div class="stack-form" data-slot="repeat-opts">
           <label class="check"><input type="checkbox" name="skip_holidays" checked> 공휴일에는 울리지 않기</label>
-          <label class="check"><input type="checkbox" name="skip_custom" checked> 내가 휴일로 표시한 날에도 울리지 않기</label>
+          <p class="muted small hint-line">법정 공휴일과 내가 ‘휴일’로 만든 날이 모두 포함돼요.</p>
         </div>
         <button class="btn primary" type="submit">저장</button>
         <p class="form-msg" role="status"></p>
@@ -174,12 +174,13 @@ const alarm = {
         msg.classList.add('error');
         return;
       }
+      const skip = fe.namedItem('skip_holidays').checked;
       const row = {
         time,
         label: fe.namedItem('label').value.trim() || '알람',
         days: formDays,
-        skip_holidays: fe.namedItem('skip_holidays').checked,
-        skip_custom_holidays: fe.namedItem('skip_custom').checked,
+        skip_holidays: skip, // 공휴일과 내가 만든 휴일을 함께 다룬다 (서버 호환을 위해 두 칸에 같은 값을 쓴다)
+        skip_custom_holidays: skip,
       };
       if (!formDays.length) {
         // 한 번만: 오늘 그 시각이 아직 안 지났으면 오늘, 지났으면 내일
@@ -208,7 +209,7 @@ const alarm = {
       if (!a) return;
       try {
         if (b.dataset.action === 'toggle') await store.update('alarms', a.id, { enabled: !a.enabled });
-        else if (b.dataset.action === 'holiday') await store.update('alarms', a.id, { skip_holidays: !a.skip_holidays });
+        else if (b.dataset.action === 'holiday') await store.update('alarms', a.id, { skip_holidays: !a.skip_holidays, skip_custom_holidays: !a.skip_holidays });
         else if (b.dataset.action === 'delete' && confirm(`${a.time.slice(0, 5)} ${a.label} 알람을 지울까요?`)) await store.remove('alarms', a.id);
       } catch (err) {
         alert('저장하지 못했어요: ' + err.message);
