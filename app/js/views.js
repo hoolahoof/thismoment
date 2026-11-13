@@ -58,7 +58,16 @@ const dday = {
       const target = fe.namedItem('target_date').value;
       if (!title || !target) return;
       try {
-        await store.insert('ddays', { title, target_date: target, count_up: false });
+        const made = await store.insert('ddays', { title, target_date: target, count_up: false });
+        // 디데이 날짜에 하루 종일 일정도 같이 만든다 (디데이를 지우면 이 일정도 같이 지워짐)
+        const at = new Date(`${target}T00:00`).toISOString();
+        const ev = { title, all_day: true, color: 'purple', starts_at: at, ends_at: at };
+        try {
+          await store.insert('events', { ...ev, dday_id: made.id });
+        } catch {
+          // SQL 014 를 아직 안 돌렸으면 연결 칸이 없어서 실패한다 → 연결 없이 일정만 만든다
+          try { await store.insert('events', ev); } catch { /* 일정은 못 만들어도 디데이는 저장됨 */ }
+        }
         fe.namedItem('title').value = '';
         msg.classList.remove('error');
         msg.textContent = '';
@@ -83,7 +92,10 @@ const dday = {
       if (!item) return;
       try {
         if (btn.dataset.action === 'delete') {
-          if (confirm(`'${item.title}' 디데이를 지울까요?`)) await store.remove('ddays', id);
+          if (confirm(`'${item.title}' 디데이를 지울까요? (같이 만들어진 일정도 지워져요)`)) {
+            for (const ev of store.getState().data.events.filter((e) => e.dday_id === id)) await store.remove('events', ev.id);
+            await store.remove('ddays', id);
+          }
         } else if (btn.dataset.action === 'widget') {
           // 위젯에 고정은 하나만: 새로 고정하면 나머지는 해제, 이미 고정이면 해제
           const on = !item.show_in_widget;
