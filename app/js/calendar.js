@@ -420,7 +420,9 @@ export function setupEventDialog(root) {
 
   const syncAllDay = () => {
     const all = f.namedItem('all_day').checked;
-    form.querySelectorAll('[data-when=allday]').forEach((n) => (n.hidden = !all));
+    // 반복 일정에는 '끝나는 날'(여러 날 일정)을 쓰지 않으므로 반복을 고르면 숨긴다
+    const repeating = !!f.namedItem('repeat').value;
+    form.querySelectorAll('[data-when=allday]').forEach((n) => (n.hidden = !all || repeating));
     form.querySelectorAll('[data-when=timed]').forEach((n) => (n.hidden = all));
   };
   f.namedItem('all_day').addEventListener('change', syncAllDay);
@@ -459,6 +461,8 @@ export function setupEventDialog(root) {
   function syncRepeat() {
     const freq = f.namedItem('repeat').value;
     form.querySelector('[data-when=repeat]').hidden = !freq;
+    if (freq) f.namedItem('end_date').value = '';
+    syncAllDay();
     form.querySelector('[data-when=weekly]').hidden = freq !== 'WEEKLY';
     if (freq) form.querySelector('[data-slot=interval-label]').textContent = `간격 (${UNIT[freq]})`;
     if (freq === 'WEEKLY' && !chips().some((c) => c.getAttribute('aria-pressed') === 'true') && f.namedItem('date').value) {
