@@ -502,3 +502,9 @@ dialog.sheet.tall { height: 92dvh; }
 .form-title { font-size: var(--font-size-md); font-weight: var(--font-weight-bold); }
 .alarm-btns { display: flex; }
 .alarm-btns .icon-btn { width: 40px; }
+
+/* 디데이 목록: 칸 너비를 고정해서 줄을 맞춘다 */
+.dday-row .row-main { flex: 1 1 auto; min-width: 0; }
+.dday-row .dday-num { flex: none; width: 72px; text-align: right; font-variant-numeric: tabular-nums; }
+.dday-row .widget-sw { flex: none; width: 48px; }
+.dday-row .icon-btn { flex: none; }
