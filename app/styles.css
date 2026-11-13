@@ -528,3 +528,17 @@ dialog.sheet.tall { height: 92dvh; }
 .icon-btn.pin.on svg { fill: currentColor; }
 
 .pager { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+
+/* iOS 날짜 칸이 카드 밖으로 삐져나오지 않게 */
+.form input[type='date'], .form input[type='time'] {
+  -webkit-appearance: none; appearance: none; display: block; width: 100%; max-width: 100%; min-width: 0;
+  text-align: left; text-align-last: left; padding-right: var(--space-3);
+}
+.form input[type='date']::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.form-row input[type='time'] { width: auto; }
+
+/* 디데이 카드 왼쪽 막대: 둥근 모서리와 어긋나지 않게 안쪽에 곧게 그린다 */
+.dday-hero, .dday-card { position: relative; overflow: hidden; border-left-width: 1px; border-left-color: var(--color-line); }
+.dday-hero::before, .dday-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--color-accent); }
+.dday-hero.is-near::before, .dday-card.is-near::before { background: var(--color-danger); }
+.dday-hero { padding-left: calc(var(--space-4) + 3px); }
