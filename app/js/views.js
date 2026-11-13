@@ -408,8 +408,6 @@ const settings = {
         <div class="kv"><span>자동 갱신</span><span data-slot="hol-sync" class="small"></span></div>
         <div class="kv"><span>등록된 공휴일</span><span data-slot="hol-count" class="muted small"></span></div>
         <div class="kv"><span>대한민국 공휴일 표시</span><button class="switch" data-setting="show_kr_holidays" aria-label="대한민국 공휴일 표시"><span></span></button></div>
-        <div class="kv"><span>대체공휴일 포함</span><button class="switch" data-setting="include_substitute" aria-label="대체공휴일 포함"><span></span></button></div>
-        <div class="kv"><span>선거일 · 임시공휴일 포함</span><button class="switch" data-setting="include_temporary" aria-label="선거일·임시공휴일 포함"><span></span></button></div>
       </section>
       <h2 class="section-title">아이폰 시계 알람 연동</h2>
       <section class="card stack">
@@ -504,7 +502,10 @@ const settings = {
         if (!st) return;
         const key = sw.dataset.setting;
         try {
-          await store.update('settings', st.user_id, { [key]: !st[key] });
+          const v = !st[key];
+          // 대한민국 공휴일은 하나의 스위치: 대체공휴일·선거일·임시공휴일도 같이 켜고 끈다 (서버가 세 칸을 따로 읽어서 같은 값으로 맞춤)
+          const patch = key === 'show_kr_holidays' ? { show_kr_holidays: v, include_substitute: v, include_temporary: v } : { [key]: v };
+          await store.update('settings', st.user_id, patch);
         } catch (err) {
           alert('저장하지 못했어요: ' + err.message);
         }
@@ -575,6 +576,10 @@ const settings = {
     el.querySelector('[data-slot=hol-count]').textContent = `${s.holidays.length}일${years ? ` (${years})` : ''}`;
 
     const st = s.data.settings[0];
+    if (st?.show_kr_holidays && (!st.include_substitute || !st.include_temporary) && !el.dataset.holFixed) {
+      el.dataset.holFixed = '1';
+      store.update('settings', st.user_id, { include_substitute: true, include_temporary: true }).catch(() => {});
+    }
     el.querySelectorAll('[data-setting]').forEach((b) => b.setAttribute('aria-pressed', String(!!st?.[b.dataset.setting])));
 
   },
