@@ -66,6 +66,13 @@ export const home = {
       <ul class="list" data-slot="todos"></ul>`;
 
     el.addEventListener('click', async (e) => {
+      // 디데이 카드: 캘린더에서 그 날짜를 열기
+      const dd = e.target.closest('[data-dday-date]');
+      if (dd) {
+        setSelected(dd.dataset.ddayDate);
+        location.hash = '#/calendar';
+        return;
+      }
       const go = e.target.closest('[data-go]');
       if (go) {
         setSelected(toISODate(todayLocal()));
@@ -112,7 +119,7 @@ export const home = {
       .sort((a, b) => a.target_date.localeCompare(b.target_date))
       .slice(0, 3);
     el.querySelector('[data-slot=strip]').innerHTML = top
-      .map((x) => `<a class="mini-card" href="#/dday"><span class="muted">${esc(x.title)}</span><strong class="${daysUntil(x.target_date) <= 7 ? 'red' : ''}">${ddayLabel(x)}</strong></a>`)
+      .map((x) => `<button class="mini-card" type="button" data-dday-date="${x.target_date}" aria-label="${esc(x.title)} ${ddayLabel(x)}, 캘린더에서 날짜 보기"><span class="muted">${esc(x.title)}</span><strong class="${daysUntil(x.target_date) <= 7 ? 'red' : ''}">${ddayLabel(x)}</strong></button>`)
       .join('');
 
     // 알람

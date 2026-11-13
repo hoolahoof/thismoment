@@ -526,3 +526,5 @@ a.btn.pill { text-decoration: none; }
 .quote-mark-end { align-self: flex-start; margin-left: 2px; }
 .stack-form { display: flex; flex-direction: column; gap: 12px; }
 .hint-line { margin: -6px 0 0 30px; }
+
+button.mini-card { border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
