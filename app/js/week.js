@@ -109,7 +109,7 @@ export const weekView = {
           aria-label="${esc(it.ev.title)}"><span>${esc(it.ev.title)}${it.ev.recurrence ? REPEAT_ICON : ''}</span></button>`;
       }).join('');
       const nowLine = iso === todayISO ? `<div class="wk-now" style="top:${(minutesOf(now) / 60) * HW}px"></div>` : '';
-      return `<div class="wk-col ${hol ? 'is-holiday' : ''} ${iso === sel ? 'is-sel' : ''}" data-col="${iso}" style="left:${(i * 100) / 7}%;width:${100 / 7}%">${blocks}${nowLine}</div>`;
+      return `<div class="wk-col ${hol || i === 0 ? 'is-holiday' : i === 6 ? 'is-sat' : ''} ${iso === sel ? 'is-sel' : ''}" data-col="${iso}" style="left:${(i * 100) / 7}%;width:${100 / 7}%">${blocks}${nowLine}</div>`;
     }).join('');
   },
 
