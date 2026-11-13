@@ -44,7 +44,6 @@ const dday = {
       <form class="card form inline-form" data-slot="form">
         <label>이름<input name="title" required maxlength="40" placeholder="예: 여행 출발"></label>
         <label>날짜<input name="target_date" type="date" required value="${toISODate(todayLocal())}"></label>
-        <label class="check"><input type="checkbox" name="count_up"> 지난 날부터 세기 (D+)</label>
         <button class="btn primary" type="submit">${icons.plus}추가</button>
         <p class="form-msg" role="status"></p>
       </form>`;
@@ -58,7 +57,7 @@ const dday = {
       const target = fe.namedItem('target_date').value;
       if (!title || !target) return;
       try {
-        await store.insert('ddays', { title, target_date: target, count_up: fe.namedItem('count_up').checked });
+        await store.insert('ddays', { title, target_date: target, count_up: false });
         fe.namedItem('title').value = '';
         msg.classList.remove('error');
         msg.textContent = '';

@@ -11,7 +11,7 @@ const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const pad = (n) => String(n).padStart(2, '0');
 const MAX_TODOS = 8;
 // 기념일 세기: 이 날 이후로 며칠이 지났는지 (당일 = D+0)
-const SINCE = { label: '찬규님 탄신일', date: '1997-04-25' };
+const SINCE = { label: '임찬규님 탄신일', date: '1997-04-25' };
 
 const dayWord = (iso, todayISO) => {
   if (iso === todayISO) return '오늘';
