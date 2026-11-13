@@ -40,6 +40,8 @@ export function initPullRefresh() {
   document.addEventListener('touchend', () => {
     if (pulling && dist >= TRIGGER) {
       bar.textContent = '새로고침 중…';
+      // 방금 직접 새로고침한 거라 잠금 확인은 건너뛴다 (30초 안에 열릴 때만)
+      try { sessionStorage.setItem('tm.skipLock', String(Date.now())); } catch { /* 무시 */ }
       location.reload();
       return;
     }

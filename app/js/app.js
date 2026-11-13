@@ -85,8 +85,19 @@ async function openApp() {
   }
 }
 
+// 당겨서 새로고침 직후(30초 이내)에는 패스키 확인을 건너뛴다
+function justRefreshed() {
+  try {
+    const t = Number(sessionStorage.getItem('tm.skipLock'));
+    sessionStorage.removeItem('tm.skipLock');
+    return t > 0 && Date.now() - t < 30000;
+  } catch {
+    return false;
+  }
+}
+
 function showLockOrApp() {
-  if (currentUser && isLockEnabled(currentUser.id)) {
+  if (currentUser && isLockEnabled(currentUser.id) && !justRefreshed()) {
     renderLock(root, {
       onUnlock: async () => {
         await verifyLock(currentUser.id);
