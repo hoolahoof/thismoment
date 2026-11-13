@@ -11,6 +11,7 @@ import { localISO, lastDayISO, nextOccurrenceISO } from './recur.js';
 import { day } from './day.js';
 import { home } from './home.js';
 import { getTheme, setTheme } from './theme.js';
+import { pushSupported, isStandalone, pushState, enablePush, disablePush } from './push.js';
 
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
 const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComponent(SHORTCUT_NAME);
@@ -364,6 +365,13 @@ const settings = {
           </div>
         </div>
       </section>
+      <h2 class="section-title">알림</h2>
+      <section class="card stack">
+        <div class="kv">
+          <div class="row-main"><span>D-Day 푸시 알림</span><span class="muted small" data-slot="push-hint">D-Day 3일 전과 하루 전, 오전 9시·오후 9시</span></div>
+          <button class="switch" data-action="push" aria-pressed="false" aria-label="D-Day 푸시 알림"><span></span></button>
+        </div>
+      </section>
       <h2 class="section-title">보안</h2>
       <section class="card stack" data-slot="lock-card">
         <div class="kv">
@@ -399,6 +407,30 @@ const settings = {
         sw.disabled = true;
         el.querySelector('[data-slot=lock-hint]').textContent = '이 기기/브라우저에서는 쓸 수 없어요';
       }
+    });
+
+    // 푸시 알림 상태 표시
+    const pushHint = el.querySelector('[data-slot=push-hint]');
+    const pushSw = el.querySelector('[data-action=push]');
+    const refreshPush = async () => {
+      const st = await pushState();
+      pushSw.setAttribute('aria-pressed', String(st === 'on'));
+      pushSw.disabled = st === 'unsupported';
+      if (st === 'unsupported') pushHint.textContent = isStandalone() || pushSupported() ? '이 기기에서는 쓸 수 없어요' : '아이폰은 "홈 화면에 추가"한 앱에서만 알림을 받을 수 있어요';
+      else if (st === 'denied') pushHint.textContent = '알림이 막혀 있어요. 아이폰 설정 → 알림 → ThisMoment 에서 허용해 주세요';
+      else pushHint.textContent = 'D-Day 3일 전과 하루 전, 오전 9시·오후 9시';
+    };
+    refreshPush().catch(() => {});
+    pushSw.addEventListener('click', async () => {
+      pushSw.disabled = true;
+      try {
+        if (pushSw.getAttribute('aria-pressed') === 'true') await disablePush();
+        else await enablePush();
+      } catch (err) {
+        alert(err.message || err);
+      }
+      pushSw.disabled = false;
+      refreshPush().catch(() => {});
     });
 
     const paintTheme = () => {

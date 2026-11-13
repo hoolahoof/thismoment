@@ -1,6 +1,6 @@
 // 앱 화면 파일을 저장해 두고(오프라인에서도 열림), 새 버전이 있으면 뒤에서 갱신한다.
 // Supabase 데이터 요청은 저장하지 않는다.
-const CACHE = 'thismoment-v44';
+const CACHE = 'thismoment-v45';
 const SHELL = [
   './',
   'index.html',
@@ -9,6 +9,7 @@ const SHELL = [
   'js/theme.js',
   'js/pullrefresh.js',
   'js/emoji.js',
+  'js/push.js',
   'config.js',
   'manifest.webmanifest',
   'js/app.js',
@@ -72,6 +73,37 @@ self.addEventListener('fetch', (e) => {
       const res = await fetch(req);
       if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
       return res;
+    })
+  );
+});
+
+// ── 푸시 알림 (D-Day 3일 전·1일 전) ──
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { /* 글자만 온 경우 */ }
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'ThisMoment', {
+      body: d.body || '',
+      tag: d.tag,
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+      data: { url: d.url || './#/dday' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || './#/dday';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) {
+          if ('navigate' in c) c.navigate(url).catch(() => {});
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(url);
     })
   );
 });
