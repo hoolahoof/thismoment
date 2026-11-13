@@ -30,7 +30,7 @@
 SQL은 `supabase/`에 번호순. 사용자가 SQL Editor에서 직접 실행한다.
 - `schema.sql` events·todos·ddays·custom_holidays(더 이상 안 씀)·settings + RLS + 실시간 + `get_widget_data`
 - `002` kr_holidays·alarms·`get_alarm_plan`, `003` 공휴일 매일 갱신 예약, `004` 단축어용 응답,
-  `005` events.is_holiday(휴일=일정의 한 종류), `006` alarms.once_on(한 번만 알람) + 자동 삭제 예약
+  `005` events.is_holiday(휴일=일정의 한 종류), `006` alarms.once_on(한 번만 알람) + 자동 삭제 예약, `007` get_widget_data가 반복·휴일 일정과 공휴일을 돌려줌(위젯용)
 - **006 실행 여부는 미확인** (실행 전엔 한 번만 알람 저장만 실패, 나머지는 정상)
 - 공휴일: Edge Function `sync-holidays`(공공데이터포털 특일 정보)가 매일 03시 갱신. 키는 Supabase 시크릿 `DATA_GO_KR_KEY` (**저장소에 절대 넣지 말 것**, service_role 키도 마찬가지)
 
@@ -57,7 +57,7 @@ SQL은 `supabase/`에 번호순. 사용자가 SQL Editor에서 직접 실행한�
 - 소셜 로그인은 쓰지 않기로 함 (비밀번호 + Face ID만)
 
 ## 남은 일 (우선순위)
-1. 단축어 연동 + 홈 화면 위젯. 서버 `get_widget_data`는 **반복 일정·휴일 일정을 아직 모름** (이때 같이 고칠 것)
+1. 홈 화면 위젯(Scriptable): `widget/thismoment-widget.js` 작성 완료, **007 SQL 실행 + 폰에 설치(TOKEN·APIKEY 채우기)는 사용자 확인 전**. 단축어(시계 알람 동기화)는 완료 — 이름 `ThisMoment 알람 동기화`, 매일 0시 자동화(확인 끄기)
 2. 한 번만 알람/반복 일정이 단축어 응답에 맞게 동작하는지 실기기 확인
 
 ## 디자인 (방향 E "사무적·정돈" 적용 완료)
