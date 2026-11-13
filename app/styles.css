@@ -316,7 +316,11 @@ a.btn { text-decoration: none; }
 .cal-cell.blue { background: var(--color-sat-soft); }
 .cal-cell.red { background: var(--color-danger-soft); }
 .cal-cell.selected { box-shadow: inset 0 0 0 2px var(--color-accent); }
-.cal-cell.other { opacity: 0.4; }
+.cal-cell.other > * { opacity: 0.4; }
+.cal-cell.other.red { background: color-mix(in srgb, var(--color-danger-soft) 45%, transparent); }
+.cal-cell.other.blue { background: color-mix(in srgb, var(--color-sat-soft) 45%, transparent); }
+.cal-cell.edge-r { border-right-color: var(--color-line-strong); }
+.cal-cell.edge-b { border-bottom-color: var(--color-line-strong); }
 .cal-num { align-self: center; width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-sm); }
 .cal-cell.red .cal-num { color: var(--color-danger); }
 .cal-cell.blue .cal-num { color: var(--color-accent); }

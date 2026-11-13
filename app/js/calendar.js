@@ -295,9 +295,15 @@ export const calendar = {
       const hol = h.kr || h.custom;
       const evs = eventsOn(iso, s.data.events).filter((e) => !e.is_holiday);
       const other = d.getMonth() !== viewM;
+      // 이전 달·다음 달과 이번 달이 맞닿는 선은 더 진하게 (오른쪽 칸 / 아래 칸과 달이 다르면)
+      const mo = (n) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + n).getMonth() !== viewM;
+      const edgeR = i % 7 < 6 && mo(i + 1) !== other;
+      const edgeB = i + 7 < weeks * 7 && mo(i + 7) !== other;
       const cls = [
         'cal-cell',
         other ? 'other' : '',
+        edgeR ? 'edge-r' : '',
+        edgeB ? 'edge-b' : '',
         iso === todayISO ? 'today' : '',
         iso === selected ? 'selected' : '',
         hol || dow === 0 ? 'red' : dow === 6 ? 'blue' : '',
