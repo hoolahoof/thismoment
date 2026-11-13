@@ -46,7 +46,7 @@ const dday = {
       <form class="card form inline-form" data-slot="form">
         <div class="title-row">
           <label class="grow">이름<input name="title" required maxlength="40" placeholder="예: 여행 출발"></label>
-          <button type="button" class="emoji-btn" data-action="dd-emoji" aria-label="로고(이모티콘) 고르기"><span data-slot="dd-emo">☺</span></button>
+          <button type="button" class="emoji-btn" data-action="dd-emoji" aria-label="이모티콘 고르기"><span data-slot="dd-emo">☺</span></button>
           <input type="hidden" name="emoji">
         </div>
         <label>날짜<input name="target_date" type="date" required value="${toISODate(todayLocal())}"></label>
@@ -172,7 +172,7 @@ const dday = {
           .map(
             (d) => `
         <li class="card row dday-row ${!d.count_up && daysUntil(d.target_date) >= 0 && daysUntil(d.target_date) <= 7 ? 'is-near' : ''}">
-          <button class="emo-btn ${d.emoji ? '' : 'empty'}" type="button" data-action="emoji" data-id="${d.id}" aria-label="${esc(d.title)} 로고 ${d.emoji ? '바꾸기' : '붙이기'}">${d.emoji ? esc(d.emoji) : '＋'}</button>
+          <button class="emo-btn ${d.emoji ? '' : 'empty'}" type="button" data-action="emoji" data-id="${d.id}" aria-label="${esc(d.title)} 이모티콘 ${d.emoji ? '바꾸기' : '붙이기'}">${d.emoji ? esc(d.emoji) : '＋'}</button>
           <div class="row-main">
             <span class="row-title">${esc(d.title)}</span>
             <span class="muted small">${fmtDate(d.target_date)}${d.count_up ? ' 부터' : ''}</span>

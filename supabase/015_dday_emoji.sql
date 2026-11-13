@@ -1,4 +1,4 @@
--- ThisMoment · 15차: 디데이에 로고(이모티콘) 붙이기
+-- ThisMoment · 15차: 디데이에 이모티콘 붙이기
 -- SQL Editor 에 붙여넣고 Run. 여러 번 실행해도 안전.
 -- 1) ddays.emoji 칸 추가  2) 위젯 응답(get_widget_data)에 디데이 이모티콘을 함께 보냄
 
