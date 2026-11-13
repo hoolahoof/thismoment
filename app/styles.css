@@ -554,3 +554,6 @@ dialog.sheet.tall { height: 92dvh; }
 .since-label i { font-style: normal; font-size: 10px; }
 .since strong { font-size: 32px; line-height: 1.1; font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--color-text); }
 .form input[type='date'], .form input[type='time'] { display: flex; align-items: center; }
+
+/* 캘린더 아래 안내: 줄마다 한 줄에 맞춘다 (폭에 따라 글자 크기가 조금 줄어듦) */
+.cal-tip { white-space: nowrap; word-break: keep-all; font-size: clamp(10.5px, 3.1vw, 13px); }
