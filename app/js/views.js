@@ -1,5 +1,5 @@
 // 화면들. 각 화면은 mount(el) 로 한 번 그리고, update(state) 로 데이터 부분만 다시 그린다.
-// 월간 캘린더는 calendar.js. 하루 화면은 다음 단계에서 채운다.
+// 월간 캘린더는 calendar.js, 하루 타임블록은 day.js.
 import * as store from './store.js';
 import { logout } from './app.js';
 import { lockSupported, isLockEnabled, enableLock, disableLock } from './lock.js';
@@ -7,6 +7,7 @@ import { esc, fmtDate, ddayLabel, daysUntil, todayLocal, toISODate, icons } from
 import { holidayOn, alarmOn, nextRing, nextSkip } from './holidays.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
 import { calendar } from './calendar.js';
+import { day } from './day.js';
 
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
 const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComponent(SHORTCUT_NAME);
@@ -22,15 +23,6 @@ export const statusBadge = (s) => `<span class="sync sync-${s}"><span class="dot
 function header(title, right = '') {
   return `<header class="page-head"><h1>${title}</h1>${right}</header>`;
 }
-
-// ── 하루 (자리만) ──
-const day = {
-  mount(el) {
-    el.innerHTML = `${header('오늘')}
-      <section class="card placeholder"><p><strong>하루 타임블록</strong>은 3단계에서 만들어요.</p></section>`;
-  },
-  update() {},
-};
 
 // ── 디데이 (동기화 확인용 기본 기능) ──
 const dday = {

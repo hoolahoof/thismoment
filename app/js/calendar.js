@@ -44,6 +44,14 @@ const today = todayLocal();
 let viewY = today.getFullYear();
 let viewM = today.getMonth();
 let selected = toISODate(today);
+// 하루 화면과 선택 날짜를 같이 쓴다
+export const getSelected = () => selected;
+export function setSelected(iso) {
+  selected = iso;
+  const d = parseDate(iso);
+  viewY = d.getFullYear();
+  viewM = d.getMonth();
+}
 
 function shiftMonth(delta) {
   const d = new Date(viewY, viewM + delta, 1);
@@ -244,7 +252,7 @@ export function setupEventDialog(root) {
   };
   f.namedItem('all_day').addEventListener('change', syncAllDay);
 
-  function open(ev, dateISO) {
+  function open(ev, dateISO, startHM) {
     editing = ev;
     msg.textContent = '';
     msg.classList.remove('error');
@@ -258,10 +266,10 @@ export function setupEventDialog(root) {
       f.namedItem('start').value = hm(ev.starts_at);
       f.namedItem('end').value = ev.ends_at ? hm(ev.ends_at) : hm(ev.starts_at);
     } else if (!ev) {
-      const now = new Date();
-      const startH = Math.min(now.getHours() + 1, 22);
-      f.namedItem('start').value = `${pad(startH)}:00`;
-      f.namedItem('end').value = `${pad(startH + 1)}:00`;
+      const startH = startHM ? Number(startHM.slice(0, 2)) : Math.min(new Date().getHours() + 1, 22);
+      const startM = startHM ? startHM.slice(3, 5) : '00';
+      f.namedItem('start').value = `${pad(startH)}:${startM}`;
+      f.namedItem('end').value = `${pad(Math.min(startH + 1, 23))}:${startH >= 23 ? '59' : startM}`;
     }
     const color = ev?.color ?? 'blue';
     form.querySelectorAll('input[name=color]').forEach((r) => (r.checked = r.value === color));
