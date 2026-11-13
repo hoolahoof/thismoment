@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ThisMoment">
+  <style>
+    :root{--tm-blue:#2A55C0;--tm-now:#E8603C}
+    @media (prefers-color-scheme:dark){:root{--tm-blue:#86A6F5;--tm-now:#EEA08B}}
+  </style>
+  <rect x="11" y="12" width="10" height="40" rx="3" fill="var(--tm-blue)"/>
+  <rect x="27" y="12" width="10" height="40" rx="3" fill="var(--tm-now)"/>
+  <rect x="43" y="12" width="10" height="40" rx="3" fill="var(--tm-blue)"/>
+</svg>
