@@ -3,7 +3,7 @@
 // 로그인 자체는 자동 로그인 세션이 맡고, 이 잠금은 "이 기기에서 나만 열 수 있게" 하는 역할이다.
 
 const KEY = (uid) => `tm.lock.${uid}`;
-const RELOCK_AFTER_MS = 60 * 1000; // 앱을 1분 이상 벗어났다 오면 다시 잠금
+const RELOCK_AFTER_MS = 5 * 60 * 1000; // 앱을 5분 이상 벗어났다 오면 다시 잠금
 
 const b64url = (buf) =>
   btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
