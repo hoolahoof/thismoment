@@ -113,7 +113,7 @@ export const home = {
 
     // 기념일 세기 (명언 위)
     const passed = Math.round((todayLocal() - parseDate(SINCE.date)) / 86400000);
-    el.querySelector('[data-slot=since]').innerHTML = `<span>${esc(SINCE.label)}</span><strong>D+${passed.toLocaleString('ko-KR')}</strong>`;
+    el.querySelector('[data-slot=since]').innerHTML = `<span class="since-label"><i aria-hidden="true">✦</i>${esc(SINCE.label)}<i aria-hidden="true">✦</i></span><strong>D+${passed.toLocaleString('ko-KR')}</strong>`;
 
     // 머리글
     el.querySelector('[data-slot=date]').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일`;
