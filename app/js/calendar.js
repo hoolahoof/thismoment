@@ -60,7 +60,6 @@ export const calendar = {
         <button role="tab" data-mode="month" aria-selected="true">월간</button>
         <button role="tab" data-mode="week" aria-selected="false">주간</button>
       </div>
-      <div class="dday-strip" data-slot="strip"></div>
       <section class="card cal" data-slot="cal">
         <div class="cal-week">${WD.map((w, i) => `<span class="${i === 0 ? 'red' : i === 6 ? 'blue' : ''}">${w}</span>`).join('')}</div>
         <div class="cal-grid" data-slot="grid" role="grid"></div>
@@ -280,15 +279,6 @@ export const calendar = {
     el.querySelector('[data-slot=day-panel]').hidden = weekMode;
     el.querySelector('[data-slot=tip]').hidden = weekMode;
     el.querySelector('[data-slot=week-view]').hidden = !weekMode;
-
-    // 디데이 띠
-    const top = [...s.data.ddays]
-      .filter((d) => !d.count_up && daysUntil(d.target_date) >= 0)
-      .sort((a, b) => a.target_date.localeCompare(b.target_date))
-      .slice(0, 3);
-    el.querySelector('[data-slot=strip]').innerHTML = top
-      .map((d) => `<a class="mini-card" href="#/dday"><span class="muted">${esc(d.title)}</span><strong class="${daysUntil(d.target_date) <= 7 ? 'red' : ''}">${ddayLabel(d)}</strong></a>`)
-      .join('');
 
     // 달력 칸
     const first = new Date(viewY, viewM, 1);
