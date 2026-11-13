@@ -508,3 +508,6 @@ dialog.sheet.tall { height: 92dvh; }
 .dday-row .dday-num { flex: none; width: 72px; text-align: right; font-variant-numeric: tabular-nums; }
 .dday-row .widget-sw { flex: none; width: 48px; }
 .dday-row .icon-btn { flex: none; }
+
+/* 당겨서 새로고침 표시 */
+.ptr { position: fixed; top: calc(var(--safe-t) - 40px); left: 50%; transform: translate(-50%, 0); z-index: 30; padding: 6px 14px; border-radius: var(--radius-control); background: var(--color-surface); border: 1px solid var(--color-line); color: var(--color-muted); font-size: var(--font-size-sm); pointer-events: none; }
