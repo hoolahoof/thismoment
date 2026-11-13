@@ -511,3 +511,18 @@ dialog.sheet.tall { height: 92dvh; }
 
 /* 당겨서 새로고침 표시 */
 .ptr { position: fixed; top: calc(var(--safe-t) - 40px); left: 50%; transform: translate(-50%, 0); z-index: 30; padding: 6px 14px; border-radius: var(--radius-control); background: var(--color-surface); border: 1px solid var(--color-line); color: var(--color-muted); font-size: var(--font-size-sm); pointer-events: none; }
+
+/* 새로고침 중 표시: 맨 위 가는 줄 + 작은 회전 아이콘 */
+.ptr-top { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 40; overflow: hidden; pointer-events: none; opacity: 0; }
+.ptr-top.on { opacity: 1; }
+.ptr-top::before { content: ''; position: absolute; top: 0; bottom: 0; width: 35%; background: var(--color-accent); animation: ptr-run 1s ease-in-out infinite; }
+@keyframes ptr-run { from { left: -35%; } to { left: 100%; } }
+.ptr.loading { color: var(--color-text); display: inline-flex; align-items: center; gap: 8px; }
+.ptr-spin { width: 14px; height: 14px; border: 2px solid var(--color-line-strong); border-top-color: var(--color-accent); border-radius: 50%; animation: ptr-rot 0.7s linear infinite; }
+@keyframes ptr-rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ptr-top::before, .ptr-spin { animation: none; } }
+
+/* 디데이 위젯 고정 별 */
+.icon-btn.pin { color: var(--color-muted); }
+.icon-btn.pin.on { color: var(--color-accent); }
+.icon-btn.pin.on svg { fill: currentColor; }

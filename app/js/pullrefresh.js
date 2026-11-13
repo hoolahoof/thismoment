@@ -10,6 +10,10 @@ export function initPullRefresh() {
   bar.hidden = true;
   bar.textContent = '↓ 당겨서 새로고침';
   document.body.appendChild(bar);
+  // 새로고침하는 동안 화면 맨 위에 가는 진행 줄을 흐르게 한다
+  const top = document.createElement('div');
+  top.className = 'ptr-top';
+  document.body.appendChild(top);
 
   const reset = () => {
     pulling = false;
@@ -39,7 +43,11 @@ export function initPullRefresh() {
 
   document.addEventListener('touchend', () => {
     if (pulling && dist >= TRIGGER) {
-      bar.textContent = '새로고침 중…';
+      bar.classList.add('loading');
+      bar.hidden = false;
+      bar.style.transform = 'translate(-50%, 56px)';
+      bar.innerHTML = '<span class="ptr-spin" aria-hidden="true"></span>새로고침 중…';
+      top.classList.add('on');
       // 방금 직접 새로고침한 거라 잠금 확인은 건너뛴다 (30초 안에 열릴 때만)
       try { sessionStorage.setItem('tm.skipLock', String(Date.now())); } catch { /* 무시 */ }
       location.reload();

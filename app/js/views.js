@@ -73,7 +73,14 @@ const dday = {
         if (btn.dataset.action === 'delete') {
           if (confirm(`'${item.title}' 디데이를 지울까요?`)) await store.remove('ddays', id);
         } else if (btn.dataset.action === 'widget') {
-          await store.update('ddays', id, { show_in_widget: !item.show_in_widget });
+          // 위젯에 고정은 하나만: 새로 고정하면 나머지는 해제, 이미 고정이면 해제
+          const on = !item.show_in_widget;
+          if (on) {
+            for (const o of store.getState().data.ddays) {
+              if (o.id !== id && o.show_in_widget) await store.update('ddays', o.id, { show_in_widget: false });
+            }
+          }
+          await store.update('ddays', id, { show_in_widget: on });
         }
       } catch (err) {
         alert('저장하지 못했어요: ' + err.message);
@@ -84,11 +91,12 @@ const dday = {
     const all = s.data.ddays;
     const upcoming = all.filter((d) => !d.count_up && daysUntil(d.target_date) >= 0)
       .sort((x, y) => x.target_date.localeCompare(y.target_date));
-    const hero = upcoming[0];
+    const hero = all.find((d) => d.show_in_widget) ?? upcoming[0]; // 위젯에 고정한 디데이 (없으면 가장 가까운 것)
     el.querySelector('[data-slot=hero]').innerHTML = hero ? (() => {
       const n = daysUntil(hero.target_date);
+      const near = !hero.count_up && n >= 0 && n <= 7;
       return `
-      <section class="card dday-hero ${n <= 7 ? 'is-near' : ''}">
+      <section class="card dday-hero ${near ? 'is-near' : ''}">
         <div class="dday-hero-top"><span class="dday-hero-title">${esc(hero.title)}</span><span class="dday-card-ic">${ddayIcon(hero.title)}</span></div>
         <div class="dday-hero-count">${ddayLabel(hero)}</div>
         <div class="dday-hero-date">${fmtDate(hero.target_date)}</div>
@@ -106,7 +114,7 @@ const dday = {
             <span class="muted small">${fmtDate(d.target_date)}${d.count_up ? ' 부터' : ''}</span>
           </div>
           <strong class="dday-num">${ddayLabel(d)}</strong>
-          <div class="widget-sw"><span class="muted small">위젯</span><button class="switch" data-action="widget" data-id="${d.id}" aria-pressed="${d.show_in_widget}" aria-label="홈 위젯에 표시"><span></span></button></div>
+          <button class="icon-btn pin ${d.show_in_widget ? 'on' : ''}" data-action="widget" data-id="${d.id}" aria-pressed="${!!d.show_in_widget}" aria-label="${d.show_in_widget ? '위젯 고정 해제' : '위젯에 고정'}" title="위젯에 고정">${icons.star}</button>
           <button class="icon-btn" data-action="delete" data-id="${d.id}" aria-label="${esc(d.title)} 삭제">${icons.trash}</button>
         </li>`
           )
