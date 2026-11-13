@@ -131,10 +131,48 @@ function put(stack, t, size, color, weight) {
   return el;
 }
 
+// 한 줄 구분선
+function rule(stack, vertical) {
+  const l = stack.addStack();
+  l.backgroundColor = C.line;
+  l.size = vertical ? new Size(1, 0) : new Size(0, 1);
+  return l;
+}
+
+// 디데이 한 칸: 왼쪽 굵은 막대 + 이름 / 큰 숫자 / 날짜
+function ddayCard(parent, d, big) {
+  const near = !d.count_up && d.diff >= 0 && d.diff <= 7;
+  const row = parent.addStack();
+  row.centerAlignContent();
+  const bar = row.addStack();
+  bar.backgroundColor = near ? C.danger : C.accent;
+  bar.size = new Size(3, big ? 58 : 50);
+  bar.cornerRadius = 1.5;
+  row.addSpacer(9);
+  const col = row.addStack();
+  col.layoutVertically();
+  put(col, d.title, 12, C.muted, 'medium');
+  put(col, ddayLabel(d), big ? 36 : 30, near ? C.danger : C.text, 'bold');
+  const dt = parse(d.date);
+  put(col, `${dt.getMonth() + 1}.${dt.getDate()} (${WD[dt.getDay()]})`, 10, C.muted);
+  return row;
+}
+
+function evLine(parent, e, size) {
+  const row = parent.addStack();
+  row.centerAlignContent();
+  const t = e.all_day ? '종일' : `${p2(Math.floor(e.minutes / 60))}:${p2(e.minutes % 60)}`;
+  put(row, t, size, C.accent, 'bold');
+  row.addSpacer(6);
+  put(row, e.title, size, C.text, 'medium');
+  row.addSpacer();
+  return row;
+}
+
 function build(data) {
   const w = new ListWidget();
   w.backgroundColor = C.bg;
-  w.setPadding(12, 14, 12, 14);
+  w.setPadding(14, 16, 14, 16);
   const small = config.widgetFamily === 'small';
   const now = new Date();
   const today = data.today || iso(now);
@@ -143,59 +181,58 @@ function build(data) {
   const evs = eventsOn(today, data.events || []);
   const myHol = evs.find((e) => e.is_holiday);
   const normal = evs.filter((e) => !e.is_holiday).filter((e) => e.all_day || e.end > now);
+  const holName = kr ? kr.name : myHol ? myHol.title : null;
 
-  // 머리글: 날짜 + 휴일 이름
+  // 머리글: 오늘 날짜 (휴일이면 빨간 이름을 옆에)
   const head = w.addStack();
   head.centerAlignContent();
-  put(head, `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}`, 15, C.text, 'bold');
-  const holName = kr ? kr.name : myHol ? myHol.title : null;
-  if (holName) {
-    head.addSpacer(6);
+  put(head, `${now.getMonth() + 1}월 ${now.getDate()}일 ${WD[now.getDay()]}`, 14, holName ? C.danger : C.text, 'bold');
+  if (holName && !small) {
+    head.addSpacer(8);
     put(head, holName, 11, C.danger, 'medium');
   }
   head.addSpacer();
-  w.addSpacer(8);
+  if (holName && small) put(w, holName, 10, C.danger, 'medium');
+  w.addSpacer(10);
 
   // 디데이: 다가오는 것 먼저, 그 다음 지난 것/기념일
   const all = data.ddays || [];
   const dd = all.filter((d) => !d.count_up && d.diff >= 0).concat(all.filter((d) => d.count_up || d.diff < 0)).slice(0, small ? 1 : 2);
 
-  const body = w.addStack();
-  body.topAlignContent();
-
-  const left = body.addStack();
-  left.layoutVertically();
-  if (!dd.length) put(left, '디데이 없음', 12, C.muted);
-  dd.forEach((d, i) => {
-    if (i) left.addSpacer(8);
-    put(left, d.title, 11, C.muted);
-    put(left, ddayLabel(d), small ? 26 : 28, !d.count_up && d.diff >= 0 && d.diff <= 7 ? C.danger : C.text, 'bold');
-  });
-
-  if (!small) {
+  if (small) {
+    if (dd.length) ddayCard(w, dd[0], true);
+    else put(w, '디데이 없음', 12, C.muted);
+    w.addSpacer();
+    rule(w, false);
+    w.addSpacer(7);
+    if (normal.length) evLine(w, normal[0], 12);
+    else put(w, '오늘 일정 없음', 12, C.muted);
+  } else {
+    const body = w.addStack();
+    body.topAlignContent();
+    const left = body.addStack();
+    left.layoutVertically();
+    if (!dd.length) put(left, '디데이 없음', 12, C.muted);
+    dd.forEach((d, i) => {
+      if (i) left.addSpacer(10);
+      ddayCard(left, d, false);
+    });
+    body.addSpacer(14);
+    rule(body, true);
     body.addSpacer(14);
     const right = body.addStack();
     right.layoutVertically();
     put(right, '오늘 일정', 11, C.muted, 'bold');
-    right.addSpacer(3);
+    right.addSpacer(5);
     if (!normal.length) put(right, '일정 없음', 12, C.muted);
     normal.slice(0, 3).forEach((e) => {
-      const t = e.all_day ? '종일' : `${p2(Math.floor(e.minutes / 60))}:${p2(e.minutes % 60)}`;
-      const row = right.addStack();
-      put(row, t + '  ', 12, C.accent, 'medium');
-      put(row, e.title, 12, C.text);
-      right.addSpacer(2);
+      evLine(right, e, 12);
+      right.addSpacer(4);
     });
     if (normal.length > 3) put(right, `+${normal.length - 3}개 더`, 10, C.muted);
     right.addSpacer();
-  } else {
-    left.addSpacer(6);
-    normal.slice(0, 2).forEach((e) => {
-      const t = e.all_day ? '' : `${p2(Math.floor(e.minutes / 60))}:${p2(e.minutes % 60)} `;
-      put(left, t + e.title, 11, C.text);
-    });
+    body.addSpacer();
   }
-  body.addSpacer();
 
   w.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
   return w;
