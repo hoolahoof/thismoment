@@ -806,3 +806,12 @@ dialog.sheet.tall { height: 92dvh; }
   .diary-side { position: sticky; top: var(--space-8); }
   .view:has(.home-head) > .dday-more { grid-column: 1 / -1; margin-top: 0; }
 }
+
+/* 홈 하단: 오늘 하루 미리보기 */
+.home-link { font-size: var(--font-size-sm); color: var(--color-muted); text-decoration: none; }
+.home-link:hover { color: var(--color-accent); }
+.diary-home { display: block; padding: var(--space-3) var(--space-4); color: var(--color-text); text-decoration: none; }
+.diary-home:hover { background: var(--color-surface-2); }
+.dh-text { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; word-break: break-word; font-size: var(--font-size-md); line-height: 1.7; }
+.dh-empty { font-size: var(--font-size-md); }
+@media (min-width: 900px) { .view:has(.home-head) > .home-sec[data-sec=diary] { grid-column: 1 / -1; } }

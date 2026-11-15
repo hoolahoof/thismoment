@@ -66,6 +66,14 @@ export const home = {
         <section class="card" data-slot="alarms"></section>
       </section>
 
+      <section class="home-sec" data-sec="diary" hidden>
+        <div class="section-row">
+          <h2 class="section-title">오늘 하루</h2>
+          <a class="home-link" href="#/diary">쓰러 가기 ›</a>
+        </div>
+        <a class="card diary-home" href="#/diary" data-slot="diary"></a>
+      </section>
+
       <p class="home-all-empty muted" data-slot="all-empty" hidden>오늘은 예정된 일정·할 일·알람이 없어요. <a href="#/calendar">일정 추가하기</a></p>
 
       <button class="quote" type="button" data-slot="quote" hidden aria-label="오늘의 명언, 누르면 다음 명언">
@@ -242,5 +250,12 @@ export const home = {
     };
     for (const [k, v] of Object.entries(has)) el.querySelector(`[data-sec=${k}]`).hidden = !v;
     el.querySelector('[data-slot=all-empty]').hidden = Object.values(has).some(Boolean);
+
+    // 오늘 하루(일기): 오늘 쓴 글을 미리 보여주고, 누르면 일기 탭으로. 일기 표가 없으면 숨긴다.
+    el.querySelector('[data-sec=diary]').hidden = !s.diaryReady;
+    const note = s.data.diary.find((r) => r.entry_date === todayISO);
+    el.querySelector('[data-slot=diary]').innerHTML = note?.body.trim()
+      ? `<span class="dh-text">${esc(note.body)}</span>`
+      : '<span class="dh-empty muted">오늘 하루는 어땠나요? 눌러서 기록해 보세요.</span>';
   },
 };
