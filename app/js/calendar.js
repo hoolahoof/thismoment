@@ -393,7 +393,7 @@ export const calendar = {
       .sort((a, b) => a.target_date.localeCompare(b.target_date))
       .slice(0, 3);
     el.querySelector('[data-slot=side-dday]').innerHTML = up.length
-      ? '<h3 class="side-title">다가오는 디데이</h3>' + up.map((x) => `<button type="button" class="side-dday-row" data-dday-date="${x.target_date}"><span class="sd-title">${esc(x.title)}</span><span class="sd-count">${ddayLabel(x)}</span></button>`).join('')
+      ? '<h3 class="side-title">다가오는 D-Day</h3>' + up.map((x) => `<button type="button" class="side-dday-row" data-dday-date="${x.target_date}"><span class="sd-title">${esc(x.title)}</span><span class="sd-count">${ddayLabel(x)}</span></button>`).join('')
       : '';
   },
 };
@@ -418,8 +418,8 @@ export function eventDialogHTML() {
         <label class="grow">날짜<input type="date" name="date" required></label>
         <label class="grow" data-when="allday">끝나는 날<input type="date" name="end_date"></label>
       </div>
-      <label class="check" data-when="newdday"><input type="checkbox" name="also_dday"> 디데이로도 등록</label>
-      <p class="muted small" data-when="ddaylink" hidden>디데이와 연결된 일정이에요. 이름·날짜를 바꾸면 디데이도 바뀌고, 지우면 디데이도 같이 지워져요.</p>
+      <label class="check" data-when="newdday"><input type="checkbox" name="also_dday"> D-Day로도 등록</label>
+      <p class="muted small" data-when="ddaylink" hidden>D-Day와 연결된 일정이에요. 이름·날짜를 바꾸면 D-Day도 바뀌고, 지우면 D-Day도 같이 지워져요.</p>
       <div class="form-row" data-when="timed">
         <label class="grow">시작<input type="time" name="start" value="09:00"></label>
         <label class="grow">끝<input type="time" name="end" value="10:00"></label>
@@ -782,7 +782,7 @@ export function setupEventDialog(root) {
       if (opts) {
         scope = await askScope('삭제', opts);
         if (!scope) return;
-      } else if (!confirm(`'${editing.title}' 일정을 지울까요?${editing.dday_id ? ' (연결된 디데이도 같이 지워져요)' : ''}`)) return;
+      } else if (!confirm(`'${editing.title}' 일정을 지울까요?${editing.dday_id ? ' (연결된 D-Day도 같이 지워져요)' : ''}`)) return;
       await deleteEvent({ occ: editing, scope });
       dlg.close();
     } catch (err) {

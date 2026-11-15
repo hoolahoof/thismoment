@@ -206,14 +206,14 @@ function build(data) {
     // 제목 · D-숫자 · 날짜만, 위젯 가운데에 크게
     w.addSpacer();
     if (dd.length) ddayCard(w, dd[0], true);
-    else put(w, '디데이 없음', 13, C.muted);
+    else put(w, 'D-Day 없음', 13, C.muted);
     w.addSpacer();
   } else {
     const body = w.addStack();
     body.topAlignContent();
     const left = body.addStack();
     left.layoutVertically();
-    if (!dd.length) put(left, '디데이 없음', 12, C.muted);
+    if (!dd.length) put(left, 'D-Day 없음', 12, C.muted);
     dd.forEach((d, i) => {
       if (i) left.addSpacer(12);
       ddayCard(left, d, false);

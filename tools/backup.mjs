@@ -51,7 +51,7 @@ try {
   const tmp = FILE + '.tmp';
   writeFileSync(tmp, JSON.stringify(data, null, 2));
   renameSync(tmp, FILE); // 기존 파일이 새 파일로 바뀜
-  log(`백업 완료: 일정 ${data.events.length}, 할 일 ${data.todos.length}, 디데이 ${data.ddays.length}, 알람 ${data.alarms.length} → ${FILE}`);
+  log(`백업 완료: 일정 ${data.events.length}, 할 일 ${data.todos.length}, D-Day ${data.ddays.length}, 알람 ${data.alarms.length} → ${FILE}`);
 } catch (e) {
   log('백업 실패: ' + (e.message || e));
   process.exit(1);

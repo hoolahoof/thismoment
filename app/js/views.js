@@ -33,16 +33,16 @@ function header(title, right = '') {
 const dday = {
   mount(el) {
     el.innerHTML = `
-      ${header('디데이')}
+      ${header('D-Day')}
       <div data-slot="hero"></div>
       <h2 class="section-title">전체</h2>
       <ul class="list" data-slot="list"></ul>
-      <nav class="pager" data-slot="pager" aria-label="디데이 페이지" hidden>
+      <nav class="pager" data-slot="pager" aria-label="D-Day 페이지" hidden>
         <button class="btn pill" type="button" data-page="-1">이전</button>
         <span class="muted small" data-slot="page-info"></span>
         <button class="btn pill" type="button" data-page="1">다음</button>
       </nav>
-      <h2 class="section-title">디데이 추가</h2>
+      <h2 class="section-title">D-Day 추가</h2>
       <form class="card form inline-form" data-slot="form">
         <div class="title-row">
           <label class="grow">이름<input name="title" required maxlength="40" placeholder="예: 여행 출발"></label>
@@ -118,7 +118,7 @@ const dday = {
             try { await store.update('events', ev.id, { emoji: r || null }); } catch { /* 일정 쪽은 못 붙여도 됨 */ }
           }
         } else if (btn.dataset.action === 'delete') {
-          if (confirm(`'${item.title}' 디데이를 지울까요? (같이 만들어진 일정도 지워져요)`)) {
+          if (confirm(`'${item.title}' D-Day를 지울까요? (같이 만들어진 일정도 지워져요)`)) {
             for (const ev of store.getState().data.events.filter((e) => e.dday_id === id)) await store.remove('events', ev.id);
             await store.remove('ddays', id);
           }
@@ -183,7 +183,7 @@ const dday = {
         </li>`
           )
           .join('')
-      : '<li class="empty muted">아직 디데이가 없어요. 아래에서 추가해 보세요.</li>';
+      : '<li class="empty muted">아직 D-Day가 없어요. 아래에서 추가해 보세요.</li>';
   },
 };
 

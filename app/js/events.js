@@ -135,7 +135,7 @@ export async function createEvent({ fields, start, end, rule, alsoDday }) {
       const d = await store.insert('ddays', { title: fields.title, target_date: toISODate(s), count_up: false });
       await store.update('events', ev.id, { dday_id: d.id });
     } catch (err) {
-      throw new Error('일정은 저장했지만 디데이 연결에 실패했어요: ' + err.message + ' (SQL 014 를 실행했는지 확인해 주세요)');
+      throw new Error('일정은 저장했지만 D-Day 연결에 실패했어요: ' + err.message + ' (SQL 014 를 실행했는지 확인해 주세요)');
     }
   }
   return ev;

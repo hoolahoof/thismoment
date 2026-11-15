@@ -1,7 +1,7 @@
 {
   "name": "ThisMoment",
   "short_name": "ThisMoment",
-  "description": "폰과 PC에서 같이 쓰는 캘린더 · 타임블록 · 디데이",
+  "description": "폰과 PC에서 같이 쓰는 캘린더 · 타임블록 · D-Day",
   "lang": "ko",
   "start_url": "./#/home",
   "scope": "./",
