@@ -1,3 +1,4 @@
+import './viewport.js';
 import { initTheme } from './theme.js';
 import { initPullRefresh } from './pullrefresh.js';
 import { supabase } from './supabase.js';

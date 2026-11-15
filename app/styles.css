@@ -6,7 +6,11 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { -webkit-text-size-adjust: 100%; background: var(--color-bg); }
+html { -webkit-text-size-adjust: 100%; background: var(--color-bg); touch-action: pan-x pan-y; overscroll-behavior-x: none; }
+/* 옆으로 밀려 화면이 흔들리지 않게 */
+body { overflow-x: clip; }
+/* 아이폰은 글자가 16px 보다 작은 입력칸에 커서를 두면 화면을 확대해 버린다 → 터치 기기에서는 입력칸 글자를 16px 이상으로 */
+@media (pointer: coarse) { input:not([type='checkbox']):not([type='radio']):not([type='range']), textarea, select { font-size: 16px !important; } }
 body {
   margin: 0;
   background: var(--color-bg);
