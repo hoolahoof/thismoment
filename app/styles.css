@@ -749,9 +749,21 @@ dialog.sheet.tall { height: 92dvh; }
 .diary-main { padding: var(--space-4) var(--space-4) var(--space-5); }
 .diary-day { display: flex; flex-direction: column; gap: var(--space-3); }
 .diary-day.is-today { box-shadow: inset 3px 0 0 var(--color-accent); }
-.diary-head { display: flex; align-items: baseline; gap: var(--space-2); }
+.diary-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); row-gap: var(--space-2); }
+.diary-date.red, .peek-date .red { color: var(--color-danger); }
+.diary-date.blue, .peek-date .blue { color: var(--color-accent); }
+/* 그날 일정 스티커: 살짝 기울여 붙인 작은 딱지 (일정 색 그대로) */
+.diary-stickers { flex: 1 1 140px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.diary-stickers:empty { display: none; }
+.diary-sticker {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 2px 8px 2px 6px;
+  border-left: 3px solid var(--bar); border-radius: var(--radius-chip); background: var(--bg); color: var(--color-text);
+  font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); line-height: 1.4;
+  transform: rotate(-1.2deg); box-shadow: 0 1px 0 color-mix(in srgb, var(--bar) 40%, transparent);
+}
+.diary-sticker:nth-child(even) { transform: rotate(1deg); }
+.diary-sticker .st-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .diary-head h2 { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); display: flex; align-items: baseline; gap: var(--space-2); }
-.diary-head .grow { flex: 1 1 auto; }
 .diary-tag { font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); padding: 1px 6px; border-radius: var(--radius-chip); background: var(--color-surface-2); color: var(--color-muted); }
 .diary-tag.now { background: var(--color-accent-soft); color: var(--color-accent); }
 .diary-state.error { color: var(--color-danger); }

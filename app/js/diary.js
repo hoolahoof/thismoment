@@ -4,10 +4,19 @@ import * as store from './store.js';
 import { esc, parseDate, toISODate, todayLocal, icons } from './util.js';
 import { addDays } from './recur.js';
 import { holidayOn } from './holidays.js';
+import { eventsOn, eventTime } from './recur.js';
+import { colorOf } from './colors.js';
+import { emojiTag } from './emoji.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const SAVE_DELAY = 900;
 const todayISO = () => toISODate(todayLocal());
+// 캘린더와 같은 규칙: 공휴일·일요일은 빨강, 토요일은 파랑
+const toneOf = (iso, s) => {
+  const h = holidayOn(iso, s);
+  const dow = parseDate(iso).getDay();
+  return h.kr || h.custom || dow === 0 ? 'red' : dow === 6 ? 'blue' : '';
+};
 const dayDiff = (a, b) => Math.round((parseDate(b) - parseDate(a)) / 86400000);
 const snippet = (body, q) => {
   const i = body.toLowerCase().indexOf(q.toLowerCase());
@@ -111,7 +120,7 @@ export const diary = {
           <header class="diary-head">
             <h2 data-slot="title"></h2>
             <span class="red small" data-slot="hol"></span>
-            <span class="grow"></span>
+            <div class="diary-stickers" data-slot="stickers"></div>
             <span class="diary-state muted small" data-slot="state" role="status"></span>
           </header>
           <textarea class="diary-text" maxlength="5000"></textarea>
@@ -143,7 +152,7 @@ export const diary = {
     const peekHTML = (iso, s) => {
       const row = s.data.diary.find((r) => r.entry_date === iso);
       const tag = tagOf(iso);
-      return `<span class="peek-date">${tag ? `<b>${tag}</b>` : ''}${dateText(iso)}</span><span class="peek-text">${esc(row?.body ?? '')}</span>`;
+      return `<span class="peek-date">${tag ? `<b>${tag}</b>` : ''}<span class="${toneOf(iso, s)}">${dateText(iso)}</span></span><span class="peek-text">${esc(row?.body ?? '')}</span>`;
     };
 
     // ── 오른쪽: 미니 달력 / 키워드 검색 ──
@@ -185,7 +194,12 @@ export const diary = {
       main.dataset.date = iso;
       main.classList.toggle('is-today', iso === t);
       const tag = tagOf(iso);
-      main.querySelector('[data-slot=title]').innerHTML = `${tag ? `<span class="diary-tag ${iso === t ? 'now' : ''}">${tag}</span>` : ''}${dateText(iso)}`;
+      main.querySelector('[data-slot=title]').innerHTML = `${tag ? `<span class="diary-tag ${iso === t ? 'now' : ''}">${tag}</span>` : ''}<span class="diary-date ${toneOf(iso, s)}">${dateText(iso)}</span>`;
+      // 그날의 일정 제목을 스티커처럼 붙인다 (휴일 표시는 위의 빨간 이름으로 이미 나옴)
+      main.querySelector('[data-slot=stickers]').innerHTML = eventsOn(iso, s.data.events)
+        .filter((ev) => !ev.is_holiday)
+        .map((ev) => `<span class="diary-sticker" style="--bg:${colorOf(ev.color).bg};--bar:${colorOf(ev.color).bar}" title="${esc(`${eventTime(ev)} ${ev.title}`.trim())}"><span class="st-t">${esc(ev.title)}</span>${emojiTag(ev)}</span>`)
+        .join('');
       const h = holidayOn(iso, s);
       main.querySelector('[data-slot=hol]').textContent = h.kr || h.custom || '';
       ta.placeholder = iso === t ? '오늘 하루는 어땠나요?' : ''; // 안내 문구는 오늘 칸에만
