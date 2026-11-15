@@ -19,7 +19,7 @@
 | views.js | 디데이·알람·설정 화면 (+ views 맵) |
 | home.js / quotes.js | 홈(대시보드)과 10초 명언 띠 (`app/data/quotes.json` 965개) |
 | calendar.js | 월간 캘린더, 일정 추가/수정 창, 끌어서 기간 선택·일정 옮기기 |
-| day.js / week.js / timeline.js | 하루 시간표(블록 끌기·늘리기), 주간 보기, 공통 계산 |
+| day.js / timeline.js | 하루 시간표(블록 끌기·늘리기), 공통 계산 (주간 보기는 없앴음) |
 | recur.js / events.js | 반복 규칙 계산, "이 일정만/이후 모두/전체" 수정·삭제 로직 |
 | holidays.js | 공휴일·내 휴일 판정, 알람 울림 계산 |
 | search.js, colors.js, util.js, auth.js, lock.js, supabase.js | 검색, 색 14가지, 도우미, 비밀번호 화면, 잠금, 연결 |
@@ -59,6 +59,12 @@ SQL은 `supabase/`에 번호순. 사용자가 SQL Editor에서 직접 실행한�
 ## 남은 일 (우선순위)
 1. 홈 화면 위젯(Scriptable): `widget/thismoment-widget.js` 작성 완료, **007 SQL 실행 + 폰에 설치(TOKEN·APIKEY 채우기)는 사용자 확인 전**. 단축어(시계 알람 동기화)는 완료 — 이름 `ThisMoment 알람 동기화`, 매일 0시 자동화(확인 끄기)
 2. 한 번만 알람/반복 일정이 단축어 응답에 맞게 동작하는지 실기기 확인
+
+## 데스크탑 레이아웃 (폭 900px 이상, 폰은 하단 탭 그대로)
+- 왼쪽 사이드바(로고·`＋ 새 일정`·메뉴·아래에 가까운 디데이/동기화), 본문 최대 1040~1280px. 캘린더는 달력 + 오른쪽 날짜 패널 2단, 홈은 일정/할 일 2단
+- 일정 추가·수정 창은 데스크탑에서 오른쪽 패널(440px). 단축키: N 새 일정, ← → 달 이동, T 오늘, / 검색 (`calendar.js`)
+- 홈은 내용 없는 섹션을 숨기고 셋 다 비면 한 줄만 보여준다. 명언은 홈 맨 아래
+- 폰/데스크탑 분기는 전부 `styles.css` 맨 아래 `@media (min-width: 900px)` 블록
 
 ## 디자인 (방향 E "사무적·정돈" 적용 완료)
 - 원본 시안: `design/home-e-light.html`, `design/home-e-dark.html`

@@ -4,7 +4,8 @@ import { supabase } from './supabase.js';
 import * as store from './store.js';
 import { renderAuth, checkPassword } from './auth.js';
 import { views, statusBadge } from './views.js';
-import { icons } from './util.js';
+import { icons, esc, daysUntil, ddayLabel } from './util.js';
+import { requestNewEvent } from './calendar.js';
 import { isLockEnabled, verifyLock, renderLock, watchRelock, disableLock } from './lock.js';
 
 initTheme();
@@ -45,9 +46,12 @@ function renderShell() {
             <text x="64" y="43"><tspan font-weight="400">This</tspan><tspan font-weight="700">Moment</tspan></text>
           </svg>
         </div>
+        <button type="button" class="side-new" data-action="new-event" aria-label="새 일정 (N)">${icons.plus}<span>새 일정</span><kbd>N</kbd></button>
         ${TABS.map((t) => `<a href="#/${t.id}" data-tab="${t.id}">${icons[t.id]}<span>${t.label}</span></a>`).join('')}
+        <div class="side-foot" data-slot="side-foot"></div>
       </nav>
     </div>`;
+  root.querySelector('[data-action=new-event]').addEventListener('click', requestNewEvent);
   currentId = null;
   showRoute();
 }
@@ -78,6 +82,17 @@ function update(s) {
   views[currentId].update(el, s);
   const sync = root.querySelector('[data-slot=sync]');
   if (sync) sync.innerHTML = s.status === 'live' ? '' : statusBadge(s.status);
+
+  // 사이드바 아래(데스크탑): 가장 가까운 디데이 + 동기화 상태
+  const foot = root.querySelector('[data-slot=side-foot]');
+  if (foot) {
+    const up = [...s.data.ddays]
+      .filter((x) => !x.count_up && daysUntil(x.target_date) >= 0)
+      .sort((a, b) => a.target_date.localeCompare(b.target_date))[0];
+    foot.innerHTML =
+      (up ? `<div class="sf-dday"><span class="sf-title">${esc(up.title)}</span><strong>${ddayLabel(up)}</strong></div>` : '') +
+      `<div class="sf-sync">${s.status === 'live' ? '실시간 동기화됨' : statusBadge(s.status)}</div>`;
+  }
 }
 
 export async function logout() {

@@ -37,16 +37,6 @@ export const home = {
   mount(el) {
     el.innerHTML = `
       <div class="since" data-slot="since"></div>
-      <button class="quote" type="button" data-slot="quote" hidden aria-label="오늘의 명언, 누르면 다음 명언">
-        <span class="quote-mark quote-mark-open" aria-hidden="true">“</span>
-        <span class="quote-body">
-          <span class="quote-text" data-slot="q-text"></span>
-          <span class="quote-author" data-slot="q-author"></span>
-        </span>
-        <span class="quote-mark quote-mark-close" aria-hidden="true">”</span>
-        <span class="quote-timer" aria-hidden="true"></span>
-      </button>
-
       <header class="page-head home-head">
         <div class="home-head-text">
           <span class="eyebrow">오늘</span>
@@ -54,19 +44,36 @@ export const home = {
         </div>
         <span data-slot="chip"></span>
       </header>
+
       <div class="dday-grid" data-slot="strip"></div>
 
-      <h2 class="section-title">오늘 일정</h2>
-      <ul class="list" data-slot="events"></ul>
+      <section class="home-sec" data-sec="events">
+        <h2 class="section-title">오늘 일정</h2>
+        <ul class="list" data-slot="events"></ul>
+      </section>
 
-      <div class="section-row">
-        <h2 class="section-title">오늘 할 일</h2>
-        <span class="muted small" data-slot="todo-count"></span>
-      </div>
-      <ul class="list" data-slot="todos"></ul>
+      <section class="home-sec" data-sec="todos">
+        <div class="section-row">
+          <h2 class="section-title">오늘 할 일</h2>
+          <span class="muted small" data-slot="todo-count"></span>
+        </div>
+        <ul class="list" data-slot="todos"></ul>
+      </section>
 
-      <h2 class="section-title">알람</h2>
-      <section class="card" data-slot="alarms"></section>`;
+      <section class="home-sec" data-sec="alarms">
+        <h2 class="section-title">알람</h2>
+        <section class="card" data-slot="alarms"></section>
+      </section>
+
+      <p class="home-all-empty muted" data-slot="all-empty" hidden>오늘은 예정된 일정·할 일·알람이 없어요. <a href="#/calendar">일정 추가하기</a></p>
+
+      <button class="quote" type="button" data-slot="quote" hidden aria-label="오늘의 명언, 누르면 다음 명언">
+        <span class="quote-body">
+          <span class="quote-text" data-slot="q-text"></span>
+          <span class="quote-author" data-slot="q-author"></span>
+        </span>
+        <span class="quote-timer" aria-hidden="true"></span>
+      </button>`;
 
     el.addEventListener('click', async (e) => {
       // 디데이 카드: 캘린더에서 그 날짜를 열기
@@ -221,5 +228,14 @@ export const home = {
           </li>`).join('')
       : '<li class="empty muted">오늘 할 일이 없어요.</li>')
       + (todos.length > MAX_TODOS ? `<li><button class="btn block-link" data-go="day">할 일 ${todos.length - MAX_TODOS}개 더 보기</button></li>` : '');
+
+    // 내용이 없는 섹션은 접어서 숨기고, 셋 다 비면 한 줄로 알려준다 (빈 상자가 줄줄이 나오면 허해 보임)
+    const has = {
+      events: evs.length > 0,
+      todos: todos.length > 0,
+      alarms: alarms.length > 0,
+    };
+    for (const [k, v] of Object.entries(has)) el.querySelector(`[data-sec=${k}]`).hidden = !v;
+    el.querySelector('[data-slot=all-empty]').hidden = Object.values(has).some(Boolean);
   },
 };

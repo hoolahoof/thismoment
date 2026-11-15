@@ -1,7 +1,7 @@
 // 당겨서 새로고침: 맨 위에서 아래로 끌면 앱을 다시 불러온다 (홈 화면 앱엔 기본 기능이 없어서 직접 만듦).
 // 끌기 동작이 있는 곳(달력 칸, 시간표, 열린 창)에서 시작한 건 무시한다.
 const TRIGGER = 80;
-const SKIP = '.cal-grid, .timeline, .wk-body, dialog, input, textarea, select';
+const SKIP = '.cal-grid, .timeline, dialog, input, textarea, select';
 
 export function initPullRefresh() {
   let startY = 0, startX = 0, pulling = false, dist = 0;
