@@ -12,6 +12,14 @@ create table if not exists public.diary (
   unique (user_id, entry_date)
 );
 
+-- (이미 있으면 그대로 덮어써도 같은 내용입니다: 수정할 때 updated_at 자동 갱신)
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end $$;
+
 drop trigger if exists diary_touch on public.diary;
 create trigger diary_touch before update on public.diary
   for each row execute function public.touch_updated_at();
