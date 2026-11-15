@@ -368,7 +368,21 @@ dialog.sheet {
   border: 0; border-top: 1px solid var(--color-line); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--color-surface); color: var(--color-text); overflow: auto; box-shadow: var(--shadow-sheet);
 }
-dialog.sheet::backdrop { background: var(--color-backdrop); }
+/* 열고 닫을 때 부드럽게: 아래에서 올라오고(폰·일반 시트) 내려간다. 배경도 같이 서서히 */
+dialog.sheet {
+  transform: translateY(100%); opacity: 0;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, overlay 0.28s allow-discrete, display 0.28s allow-discrete;
+}
+dialog.sheet[open] { transform: none; opacity: 1; }
+dialog.sheet:not([open]), dialog.sheet:not([open])::backdrop { pointer-events: none; }
+@starting-style { dialog.sheet[open] { transform: translateY(100%); opacity: 0; } }
+dialog.sheet::backdrop {
+  background: transparent;
+  transition: background-color 0.28s ease, overlay 0.28s allow-discrete, display 0.28s allow-discrete;
+}
+dialog.sheet[open]::backdrop { background: var(--color-backdrop); }
+@starting-style { dialog.sheet[open]::backdrop { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { dialog.sheet, dialog.sheet::backdrop { transition: none; } }
 dialog.sheet h2 { font-size: 18px; font-weight: var(--font-weight-bold); }
 dialog.sheet .form { padding: var(--space-5) var(--space-4) var(--space-4); }
 dialog.sheet.tall { height: 92dvh; }
@@ -638,17 +652,17 @@ dialog.sheet.tall { height: 92dvh; }
 }
 
 /* ── 데스크탑(넓은 화면): 일정 추가·수정 창은 아래에서가 아니라 오른쪽에서 나온다 ── */
-@keyframes drawer-in { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (min-width: 900px) {
   dialog.sheet[data-slot='ev-dialog'] {
     position: fixed; inset: 0 0 0 auto; margin: 0; width: min(440px, 100%); height: 100vh; height: 100dvh; max-height: none;
     border: 0; border-left: 1px solid var(--color-line); border-radius: 0; padding: 0;
-    animation: drawer-in 0.2s ease-out;
+    transform: translateX(100%);
   }
+  dialog.sheet[data-slot='ev-dialog'][open] { transform: none; }
+  @starting-style { dialog.sheet[data-slot='ev-dialog'][open] { transform: translateX(100%); opacity: 0; } }
 }
 /* 캘린더 화면은 세로로도 가운데에 놓는다 (내용이 화면보다 길면 그냥 위에서부터) */
 @media (min-width: 900px) { .view:has(.cal-head) { min-height: 100vh; min-height: 100dvh; } }
-@media (min-width: 900px) and (prefers-reduced-motion: reduce) { dialog.sheet[data-slot='ev-dialog'] { animation: none; } }
 
 /* ── 홈 섹션 묶음 / 모두 비었을 때 ── */
 .home-sec { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
