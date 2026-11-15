@@ -1,7 +1,9 @@
 // 데이터 저장소: Supabase에서 전부 불러오고, 실시간 변경을 받아 화면에 알린다.
 import { supabase } from './supabase.js';
 
-const TABLES = ['events', 'todos', 'ddays', 'custom_holidays', 'settings', 'alarms'];
+const TABLES = ['events', 'todos', 'ddays', 'custom_holidays', 'settings', 'alarms', 'diary'];
+// SQL 을 아직 안 돌려서 표가 없어도 앱 전체가 멈추지 않게 하는 표 (일기)
+const OPTIONAL = new Set(['diary']);
 const keyOf = (table) => (table === 'settings' ? 'user_id' : 'id');
 
 const state = {
@@ -9,6 +11,7 @@ const state = {
   status: 'idle', // idle | syncing | live | offline
   data: Object.fromEntries(TABLES.map((t) => [t, []])),
   holidays: [], // 대한민국 공휴일 (공용, 읽기 전용)
+  diaryReady: false, // 일기 표(SQL 016)가 있는지
 };
 
 const listeners = new Set();
@@ -46,8 +49,15 @@ async function loadAll() {
     ...TABLES.map((t) => supabase.from(t).select('*')),
   ]);
   results.forEach((res, i) => {
-    if (res.error) throw res.error;
-    state.data[TABLES[i]] = res.data;
+    const t = TABLES[i];
+    if (res.error) {
+      if (!OPTIONAL.has(t)) throw res.error;
+      state.data[t] = [];
+      if (t === 'diary') state.diaryReady = false;
+      return;
+    }
+    state.data[t] = res.data;
+    if (t === 'diary') state.diaryReady = true;
   });
   if (hol.error) throw hol.error;
   state.holidays = hol.data;
@@ -113,6 +123,8 @@ export async function start(user) {
   // 삭제 이벤트는 필터가 걸리지 않으므로 필터 없이 구독하고, 보안은 RLS가 맡는다.
   channel = supabase.channel('db-changes');
   TABLES.forEach((table) => {
+    // 없는 표를 구독하면 실시간 연결 전체가 에러가 나므로 건너뛴다
+    if (table === 'diary' && !state.diaryReady) return;
     channel.on('postgres_changes', { event: '*', schema: 'public', table }, (p) => {
       if (p.eventType === 'DELETE') removeLocal(table, p.old[keyOf(table)]);
       else if (p.new && p.new.user_id === state.user.id) upsertLocal(table, p.new);

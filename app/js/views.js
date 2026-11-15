@@ -10,6 +10,7 @@ import { calendar, setSelected } from './calendar.js';
 import { localISO, lastDayISO, nextOccurrenceISO } from './recur.js';
 import { day } from './day.js';
 import { home } from './home.js';
+import { diary } from './diary.js';
 import { getTheme, setTheme } from './theme.js';
 import { pickEmoji } from './emoji.js';
 import { pushSupported, isStandalone, pushState, enablePush, disablePush } from './push.js';
@@ -612,4 +613,4 @@ const settings = {
   },
 };
 
-export const views = { home, calendar, day, dday, alarm, settings };
+export const views = { home, calendar, day, dday, alarm, settings, diary };

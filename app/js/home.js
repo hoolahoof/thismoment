@@ -46,6 +46,7 @@ export const home = {
       </header>
 
       <div class="dday-grid" data-slot="strip"></div>
+      <a class="dday-more" href="#/dday">D-Day 전체 보기 ›</a>
 
       <section class="home-sec" data-sec="events">
         <h2 class="section-title">오늘 일정</h2>

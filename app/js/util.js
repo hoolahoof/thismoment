@@ -38,6 +38,7 @@ export const icons = {
   calendar: svg('<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 3v3M16 3v3"/>'),
   day: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
   dday: svg('<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'),
+  diary: svg('<path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6zM6 3v18M10 8h6M10 12h6"/>'),
   settings: svg('<path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4"/>'),
   alarm: svg('<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15zM10 21h4"/>'),
   edit: svg('<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>'),

@@ -393,7 +393,7 @@ export const calendar = {
       .sort((a, b) => a.target_date.localeCompare(b.target_date))
       .slice(0, 3);
     el.querySelector('[data-slot=side-dday]').innerHTML = up.length
-      ? '<h3 class="side-title">다가오는 D-Day</h3>' + up.map((x) => `<button type="button" class="side-dday-row" data-dday-date="${x.target_date}"><span class="sd-title">${esc(x.title)}</span><span class="sd-count">${ddayLabel(x)}</span></button>`).join('')
+      ? '<h3 class="side-title"><a href="#/dday">다가오는 D-Day ›</a></h3>' + up.map((x) => `<button type="button" class="side-dday-row" data-dday-date="${x.target_date}"><span class="sd-title">${esc(x.title)}</span><span class="sd-count">${ddayLabel(x)}</span></button>`).join('')
       : '';
   },
 };
