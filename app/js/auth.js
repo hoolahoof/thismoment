@@ -30,7 +30,10 @@ export function renderAuth(root) {
           <h1>ThisMoment</h1>
           <p>${setup ? '처음 한 번만 비밀번호를 정해요' : '비밀번호를 입력해 주세요'}</p>
         </div>
-        <form class="card form" novalidate autocomplete="off">
+        <form class="card form" novalidate>
+          <!-- 브라우저가 비밀번호를 저장하려면 "아이디 칸 + 비밀번호 칸"이 한 폼에 있어야 한다.
+               혼자 쓰는 앱이라 아이디는 고정값이고, 화면 밖에 둔다(숨김 처리하면 저장 안내가 안 뜨는 브라우저가 있음). -->
+          <input class="sr-only" type="text" name="username" value="${esc(OWNER_EMAIL)}" autocomplete="username" tabindex="-1" aria-hidden="true" readonly>
           <!-- 아이폰이 "강력한 암호"를 자동으로 채우고 입력칸을 잠가버리지 않도록 new-password 를 쓰지 않는다 -->
           <label>비밀번호<input type="password" name="password" minlength="6" required
             autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text"></label>
@@ -74,6 +77,12 @@ export function renderAuth(root) {
         } else {
           await checkPassword(password);
         }
+        // 브라우저(크롬·엣지)에 비밀번호 저장을 요청한다. 지원하지 않는 브라우저(사파리 등)는 그냥 넘어간다.
+        try {
+          if (window.PasswordCredential && navigator.credentials) {
+            await navigator.credentials.store(new window.PasswordCredential({ id: OWNER_EMAIL, password }));
+          }
+        } catch { /* 저장 요청이 막혀도 로그인에는 영향 없음 */ }
         // 성공하면 onAuthStateChange 가 앱 화면으로 바꿔준다.
       } catch (err) {
         draw(err.message, true);

@@ -22,6 +22,7 @@ h1, h2, p { margin: 0; }
 a { color: var(--color-accent); }
 :focus-visible { outline: var(--focus-ring) solid var(--color-accent); outline-offset: 2px; }
 
+.sr-only { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 .boot { padding: 40vh 16px 0; text-align: center; color: var(--color-muted); }
 .muted { color: var(--color-muted); }
 .small { font-size: var(--font-size-xs); }
