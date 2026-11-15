@@ -37,6 +37,14 @@ function renderShell() {
       <div class="sync-float" data-slot="sync"></div>
       <main id="view" class="view"></main>
       <nav class="tabbar" aria-label="화면">
+        <div class="side-brand" aria-hidden="true">
+          <svg viewBox="0 0 232 64" height="38" role="img">
+            <rect x="11" y="12" width="10" height="40" rx="3" class="sb-a"/>
+            <rect x="27" y="12" width="10" height="40" rx="3" class="sb-b"/>
+            <rect x="43" y="12" width="10" height="40" rx="3" class="sb-a"/>
+            <text x="64" y="43"><tspan font-weight="400">This</tspan><tspan font-weight="700">Moment</tspan></text>
+          </svg>
+        </div>
         ${TABS.map((t) => `<a href="#/${t.id}" data-tab="${t.id}">${icons[t.id]}<span>${t.label}</span></a>`).join('')}
       </nav>
     </div>`;

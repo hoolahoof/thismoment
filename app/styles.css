@@ -622,3 +622,30 @@ dialog.sheet.tall { height: 92dvh; }
 .dday-row { gap: var(--space-2); }
 .dday-row .emo-btn { margin-left: 0; width: 36px; height: 36px; font-size: 22px; }
 .dday-row .emo-btn.empty { width: 30px; height: 30px; margin-left: 3px; margin-right: 3px; }
+
+/* ── 데스크탑(넓은 화면): 하단 탭 대신 왼쪽 사이드바 + 넓은 본문. 폰(좁은 화면)은 위 규칙 그대로 ── */
+.side-brand { display: none; }
+@media (min-width: 900px) {
+  :root { --side-w: 232px; }
+  .shell { padding-left: var(--side-w); }
+  .tabbar {
+    top: 0; right: auto; bottom: 0; width: var(--side-w); height: auto; padding: var(--space-6) var(--space-3);
+    display: flex; flex-direction: column; align-items: stretch; gap: var(--space-1);
+    border-top: 0; border-right: 1px solid var(--color-tabbar-line);
+  }
+  .side-brand { display: block; padding: 0 var(--space-3) var(--space-5); }
+  .side-brand svg { display: block; width: auto; }
+  .side-brand .sb-a { fill: var(--color-accent); }
+  .side-brand .sb-b { fill: var(--c-coral-bar); }
+  .side-brand text { fill: var(--color-text); font-family: var(--font-family); font-size: 28px; letter-spacing: -0.5px; }
+  .tabbar a {
+    flex-direction: row; justify-content: flex-start; gap: var(--space-3);
+    height: var(--touch-min); padding: 0 var(--space-3); border-radius: var(--radius-control); font-size: var(--font-size-md);
+  }
+  .tabbar a:hover { background: var(--color-surface-2); }
+  .tabbar a[aria-current='page'] { background: var(--color-accent-soft); box-shadow: none; }
+  .view { max-width: 920px; padding: var(--space-8) var(--space-8) var(--space-12); }
+  .view:has(.fab) { padding-bottom: 104px; }
+  .fab { right: var(--space-8); bottom: var(--space-8); }
+  .sync-float { left: calc(50% + var(--side-w) / 2); }
+}
