@@ -1,25 +1,30 @@
-// 오늘하루: 하루에 하나씩 쓰는 일기. 위아래로 스크롤하며 어제·오늘·내일 일기를 보고 바로 쓴다.
+// 오늘하루: 하루에 하나씩 쓰는 일기. 가운데 큰 페이지에 쓰고, 위(어제)·아래(내일) 작고 흐린 페이지를 눌러 넘긴다.
 // 입력하면 잠깐 멈춘 뒤 자동 저장된다 (저장 버튼 없음).
 import * as store from './store.js';
-import { esc, parseDate, toISODate, todayLocal } from './util.js';
+import { esc, parseDate, toISODate, todayLocal, icons } from './util.js';
 import { addDays } from './recur.js';
 import { holidayOn } from './holidays.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const SAVE_DELAY = 900;
-const MORE = 7; // '더 보기' 한 번에 늘어나는 날 수
-
-// 화면을 옮겨도 유지: 오늘 기준 앞뒤 몇 날을 보여주는지
-let before = 3;
-let after = 3;
+const todayISO = () => toISODate(todayLocal());
+const dayDiff = (a, b) => Math.round((parseDate(b) - parseDate(a)) / 86400000);
+const snippet = (body, q) => {
+  const i = body.toLowerCase().indexOf(q.toLowerCase());
+  const from = Math.max(0, i - 14);
+  const part = body.slice(from, i + q.length + 30).replace(/\s+/g, ' ');
+  const at = i - from;
+  return `${from > 0 ? '…' : ''}${esc(part.slice(0, at))}<mark>${esc(part.slice(at, at + q.length))}</mark>${esc(part.slice(at + q.length))}`;
+};
 
 const dateText = (iso) => {
   const d = parseDate(iso);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`;
+  return `${d.getFullYear() === todayLocal().getFullYear() ? '' : `${d.getFullYear()}년 `}${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`;
 };
-const tagOf = (iso, today) => (iso === today ? '오늘' : iso === addDays(today, -1) ? '어제' : iso === addDays(today, 1) ? '내일' : '');
-const hintOf = (iso, today) =>
-  iso === today ? '오늘 하루는 어땠나요?' : iso < today ? (iso === addDays(today, -1) ? '어제는 어땠나요?' : '이 날의 하루를 적어 보세요') : '이 날의 계획이나 다짐을 적어 보세요';
+const tagOf = (iso) => {
+  const t = todayISO();
+  return iso === t ? '오늘' : iso === addDays(t, -1) ? '어제' : iso === addDays(t, 1) ? '내일' : '';
+};
 
 // ── 저장 (같은 날짜의 저장은 순서대로, 새로 만들기/수정/비우면 삭제) ──
 const chain = new Map();
@@ -38,7 +43,6 @@ function saveDay(iso, text) {
   return next;
 }
 
-// 입력 중인 칸들 (저장 대기)
 const pending = new Map(); // iso → { timer, ta, stateEl }
 const setState = (stateEl, text, isError = false) => {
   if (!stateEl) return;
@@ -51,13 +55,16 @@ async function flush(iso) {
   if (!p) return;
   clearTimeout(p.timer);
   pending.delete(iso);
-  setState(p.stateEl, '저장 중…');
+  const { ta, stateEl } = p;
+  setState(stateEl, '저장 중…');
   try {
-    await saveDay(iso, p.ta.value);
-    setState(p.stateEl, p.ta.value.trim() ? '저장됨' : '');
+    await saveDay(iso, ta.value); // 값은 이 줄에서 바로 읽으므로 곧바로 다른 날로 바꿔도 안전
+    setState(stateEl, '저장됨');
   } catch (err) {
-    const hint = /diary|schema cache|relation/i.test(err.message) ? ' (일기를 쓰려면 SQL 016 을 실행해야 해요)' : '';
-    setState(p.stateEl, '저장하지 못했어요: ' + err.message + hint, true);
+    const hint = /diary|schema cache|relation/i.test(err.message) ? ' (SQL 016 을 실행했는지 확인해 주세요)' : '';
+    const msg = '저장하지 못했어요: ' + err.message + hint;
+    setState(stateEl, msg, true);
+    if (!stateEl.isConnected) alert(msg); // 이미 다른 날로 넘어간 뒤의 실패는 화면에 자리가 없으니 알림으로
   }
 }
 const flushAll = () => [...pending.keys()].forEach(flush);
@@ -69,100 +76,226 @@ const grow = (ta) => {
   ta.style.height = `${ta.scrollHeight + 2}px`;
 };
 
-function cardHTML(iso, today, s) {
-  const tag = tagOf(iso, today);
-  const h = holidayOn(iso, s);
-  const hol = h.kr || h.custom || '';
-  return `
-    <section class="card diary-day ${iso === today ? 'is-today' : ''}" data-date="${iso}">
-      <header class="diary-head">
-        <h2>${tag ? `<span class="diary-tag ${iso === today ? 'now' : ''}">${tag}</span>` : ''}${dateText(iso)}</h2>
-        ${hol ? `<span class="red small">${esc(hol)}</span>` : ''}
-        <span class="grow"></span>
-        <span class="diary-state muted small" data-slot="state" role="status"></span>
-      </header>
-      <textarea class="diary-text" rows="3" maxlength="5000" placeholder="${hintOf(iso, today)}" aria-label="${dateText(iso)} 일기"></textarea>
-    </section>`;
-}
+// 키보드: 쓰고 있지 않을 때 ↑ ↓ 로 넘기기 (데스크탑)
+let ctx = null;
+window.addEventListener('keydown', (e) => {
+  if (!ctx?.el.isConnected || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.querySelector('dialog[open]')) return;
+  const t = e.target;
+  if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+  if (e.key === 'ArrowUp') { e.preventDefault(); ctx.go(-1); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); ctx.go(1); }
+});
 
-function bindCard(card) {
-  const iso = card.dataset.date;
-  const ta = card.querySelector('textarea');
-  const stateEl = card.querySelector('[data-slot=state]');
-  ta.addEventListener('input', () => {
-    grow(ta);
-    setState(stateEl, '입력 중…');
-    clearTimeout(pending.get(iso)?.timer);
-    pending.set(iso, { timer: setTimeout(() => flush(iso), SAVE_DELAY), ta, stateEl });
-  });
-  ta.addEventListener('blur', () => flush(iso));
-}
+const chevron = (up) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${up ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'}"/></svg>`;
 
 export const diary = {
   mount(el) {
-    const today = toISODate(todayLocal());
+    let cur = todayISO();
     el.innerHTML = `
-      <header class="page-head"><h1>오늘하루</h1></header>
+      <header class="page-head">
+        <h1>오늘하루</h1>
+        <button class="btn pill" type="button" data-nav="today" hidden>오늘로</button>
+      </header>
       <div class="card placeholder diary-setup" data-slot="setup" hidden>
         <strong>일기 저장 공간이 아직 없어요</strong>
         <span class="muted small">Supabase 의 SQL Editor 에서 <code>supabase/016_diary.sql</code> 내용을 붙여넣고 Run 을 한 번 눌러 주세요. 그 뒤로 일기를 쓸 수 있어요.</span>
       </div>
-      <div class="diary-feed" data-slot="feed">
-        <button class="btn diary-more" type="button" data-more="up">이전 날 더 보기 ↑</button>
-        <div class="diary-days" data-slot="days"></div>
-        <button class="btn diary-more" type="button" data-more="down">다음 날 더 보기 ↓</button>
+      <div class="diary-layout">
+      <div class="diary-pager">
+        <button class="diary-nav" type="button" data-nav="-1" aria-label="이전 날">${chevron(true)}</button>
+        <button class="diary-peek" type="button" data-nav="-1" data-slot="peek-prev"></button>
+        <section class="card diary-day diary-main" data-slot="main">
+          <header class="diary-head">
+            <h2 data-slot="title"></h2>
+            <span class="red small" data-slot="hol"></span>
+            <span class="grow"></span>
+            <span class="diary-state muted small" data-slot="state" role="status"></span>
+          </header>
+          <textarea class="diary-text" maxlength="5000"></textarea>
+        </section>
+        <button class="diary-peek" type="button" data-nav="1" data-slot="peek-next"></button>
+        <button class="diary-nav" type="button" data-nav="1" aria-label="다음 날">${chevron(false)}</button>
+      </div>
+      <aside class="diary-side">
+        <section class="card mini-cal" aria-label="일기 달력">
+          <header class="mc-head">
+            <button class="icon-btn" type="button" data-mc="-1" aria-label="이전 달">${chevron(true).replace('M6 15l6-6 6 6', 'M15 6l-6 6 6 6')}</button>
+            <strong data-slot="mc-title"></strong>
+            <button class="icon-btn" type="button" data-mc="1" aria-label="다음 달">${chevron(true).replace('M6 15l6-6 6 6', 'M9 6l6 6-6 6')}</button>
+          </header>
+          <div class="mc-week">${WD.map((w, i) => `<span class="${i === 0 ? 'red' : i === 6 ? 'blue' : ''}">${w}</span>`).join('')}</div>
+          <div class="mc-grid" data-slot="mc-grid"></div>
+        </section>
+        <section class="card diary-search">
+          <input type="search" class="ds-input" data-slot="q" placeholder="일기 키워드 검색" autocomplete="off" aria-label="일기 키워드 검색">
+          <div class="ds-results" data-slot="results" role="list"></div>
+        </section>
+      </aside>
       </div>`;
-    const s = store.getState();
-    const days = el.querySelector('[data-slot=days]');
-    const range = [];
-    for (let i = -before; i <= after; i++) range.push(addDays(today, i));
-    days.innerHTML = range.map((iso) => cardHTML(iso, today, s)).join('');
-    days.querySelectorAll('.diary-day').forEach(bindCard);
 
-    // 위/아래로 더 보기: 위에 붙일 때는 보던 위치가 밀리지 않게 보정한다
-    el.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-more]');
-      if (!b) return;
-      const st = store.getState();
-      if (b.dataset.more === 'up') {
-        const h0 = document.documentElement.scrollHeight;
-        const html = [];
-        for (let i = before + MORE; i > before; i--) html.push(cardHTML(addDays(today, -i), today, st));
-        before += MORE;
-        days.insertAdjacentHTML('afterbegin', html.join(''));
-        days.querySelectorAll('.diary-day').forEach((c, i) => { if (i < MORE) bindCard(c); });
-        window.scrollBy(0, document.documentElement.scrollHeight - h0);
-      } else {
-        const html = [];
-        for (let i = after + 1; i <= after + MORE; i++) html.push(cardHTML(addDays(today, i), today, st));
-        after += MORE;
-        days.insertAdjacentHTML('beforeend', html.join(''));
-        const all = days.querySelectorAll('.diary-day');
-        for (let i = all.length - MORE; i < all.length; i++) bindCard(all[i]);
+    const main = el.querySelector('[data-slot=main]');
+    const ta = main.querySelector('textarea');
+    const stateEl = main.querySelector('[data-slot=state]');
+
+    const peekHTML = (iso, s) => {
+      const row = s.data.diary.find((r) => r.entry_date === iso);
+      const tag = tagOf(iso);
+      return `<span class="peek-date">${tag ? `<b>${tag}</b>` : ''}${dateText(iso)}</span><span class="peek-text">${esc(row?.body ?? '')}</span>`;
+    };
+
+    // ── 오른쪽: 미니 달력 / 키워드 검색 ──
+    let vy, vm; // 미니 달력이 보여주는 달
+    const monthOf = (iso) => { const d = parseDate(iso); vy = d.getFullYear(); vm = d.getMonth(); };
+    monthOf(cur);
+    const q = el.querySelector('[data-slot=q]');
+    const paintCal = (s) => {
+      el.querySelector('[data-slot=mc-title]').textContent = `${vy}년 ${vm + 1}월`;
+      const has = new Set(s.data.diary.filter((r) => r.body.trim()).map((r) => r.entry_date));
+      const first = new Date(vy, vm, 1).getDay();
+      const n = new Date(vy, vm + 1, 0).getDate();
+      const t = todayISO();
+      const cells = Array.from({ length: first }, () => '<span></span>');
+      for (let d = 1; d <= n; d++) {
+        const iso = toISODate(new Date(vy, vm, d));
+        const dow = new Date(vy, vm, d).getDay();
+        cells.push(`<button type="button" class="mc-cell ${iso === t ? 'today' : ''} ${iso === cur ? 'sel' : ''} ${has.has(iso) ? 'has' : ''} ${dow === 0 ? 'red' : dow === 6 ? 'blue' : ''}" data-go="${iso}" aria-label="${dateText(iso)}${has.has(iso) ? ', 일기 있음' : ''}">${d}</button>`);
       }
-      diary.update(el, st);
-    });
+      el.querySelector('[data-slot=mc-grid]').innerHTML = cells.join('');
+    };
+    const paintSearch = (s) => {
+      const k = q.value.trim();
+      const box = el.querySelector('[data-slot=results]');
+      if (!k) { box.innerHTML = ''; return; }
+      const hits = s.data.diary.filter((r) => r.body.toLowerCase().includes(k.toLowerCase())).sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+      box.innerHTML = hits.length
+        ? `<p class="muted small">${hits.length}개의 일기</p>` + hits.slice(0, 40).map((r) => `<button type="button" class="ds-hit ${r.entry_date === cur ? 'sel' : ''}" data-go="${r.entry_date}"><span class="ds-date">${dateText(r.entry_date)}</span><span class="ds-snip">${snippet(r.body, k)}</span></button>`).join('')
+        : '<p class="muted small">찾는 일기가 없어요.</p>';
+    };
 
-    // 처음 열면 오늘 카드가 위쪽에 오도록 (키보드가 뜨지 않게 포커스는 주지 않는다)
-    if (s.diaryReady) requestAnimationFrame(() => {
-      const t = el.querySelector('.is-today');
-      if (t) window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + window.scrollY - 72) });
+    // 화면 전체를 현재 날짜 기준으로 다시 맞춘다 (쓰고 있는 칸은 건드리지 않음)
+    const paint = (s, { force = false } = {}) => {
+      const iso = cur;
+      const t = todayISO();
+      el.querySelector('[data-slot=setup]').hidden = s.diaryReady;
+      ta.disabled = !s.diaryReady;
+      main.dataset.date = iso;
+      main.classList.toggle('is-today', iso === t);
+      const tag = tagOf(iso);
+      main.querySelector('[data-slot=title]').innerHTML = `${tag ? `<span class="diary-tag ${iso === t ? 'now' : ''}">${tag}</span>` : ''}${dateText(iso)}`;
+      const h = holidayOn(iso, s);
+      main.querySelector('[data-slot=hol]').textContent = h.kr || h.custom || '';
+      ta.placeholder = iso === t ? '오늘 하루는 어땠나요?' : ''; // 안내 문구는 오늘 칸에만
+      ta.setAttribute('aria-label', `${dateText(iso)} 일기`);
+      el.querySelector('[data-nav=today]').hidden = iso === t;
+      el.querySelector('[data-slot=peek-prev]').innerHTML = peekHTML(addDays(iso, -1), s);
+      el.querySelector('[data-slot=peek-next]').innerHTML = peekHTML(addDays(iso, 1), s);
+      el.querySelector('[data-slot=peek-prev]').setAttribute('aria-label', `${dateText(addDays(iso, -1))} 일기로 이동`);
+      el.querySelector('[data-slot=peek-next]').setAttribute('aria-label', `${dateText(addDays(iso, 1))} 일기로 이동`);
+      paintCal(s);
+      paintSearch(s);
+      // 쓰는 중(칸에 커서가 있거나 저장 대기 중)에는 다른 기기·실시간 변경이 내용을 덮어쓰지 못하게 고정한다
+      if (force || (document.activeElement !== ta && !pending.has(iso))) {
+        const row = s.data.diary.find((r) => r.entry_date === iso);
+        const text = row?.body ?? '';
+        if (ta.value !== text) ta.value = text;
+        grow(ta);
+      }
+    };
+
+    // 다른 날로: 먼저 저장하고, 멀리 가면 사이 날짜들이 촤르륵 넘어가며 도착한다. 넘어가는 동안은 입력을 잠근다.
+    let busy = false;
+    const go = (delta, absolute) => {
+      const target = absolute ?? addDays(cur, delta);
+      if (target === cur || busy) return;
+      const p = pending.get(cur);
+      if (p) {
+        p.stateEl = document.createElement('span'); // 저장 결과 표시가 새 날짜 칸을 어지럽히지 않게 떼어 둔다
+        flush(cur);
+      }
+      setState(stateEl, '');
+      const start = cur;
+      const diff = dayDiff(start, target);
+      const steps = Math.min(Math.abs(diff), 9);
+      const dir = diff > 0 ? 'next' : 'prev';
+      busy = true;
+      ta.readOnly = true;
+      let k = 0;
+      const step = () => {
+        k += 1;
+        cur = k >= steps ? target : addDays(start, Math.round((diff * k) / steps));
+        main.style.animationDuration = steps > 1 ? '0.14s' : '';
+        main.classList.remove('slide-next', 'slide-prev');
+        void main.offsetWidth; // 같은 애니메이션을 다시 돌리기 위해
+        main.classList.add(`slide-${dir}`);
+        if (k >= steps) {
+          monthOf(cur);
+          paint(store.getState(), { force: true });
+          ta.readOnly = false;
+          busy = false;
+          window.scrollTo({ top: 0 });
+        } else {
+          paint(store.getState(), { force: true });
+          setTimeout(step, 70);
+        }
+      };
+      step();
+    };
+
+    el.addEventListener('click', (e) => {
+      const g = e.target.closest('[data-go]');
+      if (g) return go(0, g.dataset.go);
+      const m = e.target.closest('[data-mc]');
+      if (m) {
+        const d = new Date(vy, vm + Number(m.dataset.mc), 1);
+        vy = d.getFullYear();
+        vm = d.getMonth();
+        return paintCal(store.getState());
+      }
+      const b = e.target.closest('[data-nav]');
+      if (!b) return;
+      if (b.dataset.nav === 'today') go(0, todayISO());
+      else go(Number(b.dataset.nav));
     });
+    q.addEventListener('input', () => paintSearch(store.getState()));
+    q.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const first = el.querySelector('.ds-hit');
+      if (first) go(0, first.dataset.go);
+    });
+    ta.addEventListener('input', () => {
+      grow(ta);
+      setState(stateEl, '입력 중…');
+      clearTimeout(pending.get(cur)?.timer);
+      const iso = cur;
+      pending.set(iso, { timer: setTimeout(() => flush(iso), SAVE_DELAY), ta, stateEl });
+    });
+    ta.addEventListener('blur', () => flush(cur));
+
+    // 눌러서 이동하려는 순간 저장이 끝나 화면이 다시 그려지면 누른 칸이 사라져 클릭이 무시된다.
+    // 그래서 마우스·손가락이 눌린 동안에는 다시 그리기를 미루고, 클릭이 끝난 뒤에 그린다.
+    let pressing = false;
+    let deferred = false;
+    el.addEventListener('pointerdown', () => {
+      pressing = true;
+      const ac = new AbortController();
+      const done = () => {
+        ac.abort();
+        setTimeout(() => {
+          pressing = false;
+          if (deferred) { deferred = false; paint(store.getState()); }
+        }, 0);
+      };
+      window.addEventListener('pointerup', done, { once: true, capture: true, signal: ac.signal });
+      window.addEventListener('pointercancel', done, { once: true, capture: true, signal: ac.signal });
+    }, true);
+
+    ctx = { el, go: (d) => go(d) };
+    el._paint = (s) => { if (pressing) deferred = true; else paint(s); };
+    paint(store.getState(), { force: true });
   },
 
   update(el, s) {
-    const ready = s.diaryReady;
-    el.querySelector('[data-slot=setup]').hidden = ready;
-    el.querySelectorAll('.diary-day').forEach((card) => {
-      const ta = card.querySelector('textarea');
-      ta.disabled = !ready;
-      // 쓰고 있는 칸은 건드리지 않고, 다른 기기에서 바뀐 내용만 가져온다
-      const iso = card.dataset.date;
-      if (document.activeElement === ta || pending.has(iso)) return;
-      const row = s.data.diary.find((r) => r.entry_date === iso);
-      const text = row?.body ?? '';
-      if (ta.value !== text) ta.value = text;
-      grow(ta);
-    });
+    el._paint?.(s);
   },
 };
