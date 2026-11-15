@@ -519,15 +519,31 @@ dialog.sheet.tall { height: 92dvh; }
 .dday-hero.is-near::before, .dday-card.is-near::before { background: var(--color-danger); }
 .dday-hero { padding-left: calc(var(--space-4) + 3px); }
 
-/* 홈 맨 위 기념일 세기: 얇은 선의 한 줄 카드 (이름은 왼쪽, 숫자는 오른쪽) */
+/* 홈 맨 위 기념일 세기: 금빛 왕관 + 이중 금테 (화려하고 웅장하게) */
 .since {
-  display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3);
-  padding: var(--space-3) var(--space-4); border-radius: var(--radius-card);
-  background: var(--color-surface-2); border: 1px solid var(--color-line);
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  padding: 18px var(--space-4) 20px; border-radius: var(--radius-card); overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-warn) 22%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-warn-soft) 55%, var(--color-surface)), var(--color-warn-soft));
+  border: 1px solid var(--color-warn);
+  box-shadow: inset 0 0 0 4px var(--color-warn-soft), inset 0 0 0 5px var(--color-warn),
+              inset 0 0 0 9px color-mix(in srgb, var(--color-warn) 10%, transparent);
 }
-.since-label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-muted); }
-.since-label i { font-style: normal; font-size: 9px; color: var(--color-warn); }
-.since strong { font-size: 24px; line-height: 1.1; font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--color-text); }
+.since::before, .since::after {
+  content: '✦'; position: absolute; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--color-warn); opacity: 0.55;
+}
+.since::before { left: 18px; }
+.since::after { right: 18px; }
+.since-crown { width: 40px; height: 27px; fill: var(--color-warn); }
+.since-crown path { fill: color-mix(in srgb, var(--color-warn) 80%, var(--color-warn-soft)); }
+.since-crown rect, .since-crown circle { fill: var(--color-warn); }
+.since-label { font-size: var(--font-size-md); font-weight: var(--font-weight-bold); letter-spacing: 0.2em; text-indent: 0.2em; color: var(--color-warn); }
+.since-rule { display: flex; align-items: center; gap: 10px; width: min(260px, 70%); color: var(--color-warn); }
+.since-rule i { flex: 1 1 0; height: 1px; background: linear-gradient(90deg, transparent, var(--color-warn)); }
+.since-rule i:last-child { background: linear-gradient(270deg, transparent, var(--color-warn)); }
+.since-rule b { font-size: 11px; line-height: 1; font-weight: var(--font-weight-regular); }
+.since strong { font-size: 46px; line-height: 1.05; font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; color: var(--color-text); }
 .form input[type='date'], .form input[type='time'] { display: flex; align-items: center; }
 
 /* 캘린더 아래 안내: 줄마다 한 줄에 맞춘다 (폭에 따라 글자 크기가 조금 줄어듦) */
@@ -662,6 +678,7 @@ dialog.sheet.tall { height: 92dvh; }
   .side-new svg { width: 20px; height: 20px; }
   .side-new kbd { margin-left: auto; font: inherit; font-size: var(--font-size-xs); padding: 1px 6px; border-radius: var(--radius-chip); background: color-mix(in srgb, var(--color-on-accent) 22%, transparent); }
   .side-foot { display: flex; flex-direction: column; gap: var(--space-2); margin-top: auto; padding: var(--space-3) var(--space-3) 0; border-top: 1px solid var(--color-line); font-size: var(--font-size-xs); color: var(--color-muted); }
+  .side-foot:empty { display: none; }
   .sf-dday { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
   .sf-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sf-dday strong { color: var(--color-text); font-size: var(--font-size-md); white-space: nowrap; }

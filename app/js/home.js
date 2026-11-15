@@ -123,7 +123,11 @@ export const home = {
     const sinceEl = el.querySelector('[data-slot=since]');
     if (st?.since_date) {
       const passed = Math.round((todayLocal() - parseDate(st.since_date)) / 86400000);
-      sinceEl.innerHTML = `<span class="since-label"><i aria-hidden="true">✦</i>${esc(st.since_label || '기념일')}<i aria-hidden="true">✦</i></span><strong>D+${passed.toLocaleString('ko-KR')}</strong>`;
+      sinceEl.innerHTML = `
+        <svg class="since-crown" viewBox="0 0 48 32" aria-hidden="true"><path d="M4 26 L8 8 L18 18 L24 4 L30 18 L40 8 L44 26 Z"/><rect x="4" y="28" width="40" height="3" rx="1.5"/><circle cx="8" cy="7" r="2.5"/><circle cx="24" cy="3.5" r="2.5"/><circle cx="40" cy="7" r="2.5"/></svg>
+        <span class="since-label">${esc(st.since_label || '기념일')}</span>
+        <span class="since-rule" aria-hidden="true"><i></i><b>❖</b><i></i></span>
+        <strong>D+${passed.toLocaleString('ko-KR')}</strong>`;
       sinceEl.hidden = false;
     } else {
       sinceEl.hidden = true;

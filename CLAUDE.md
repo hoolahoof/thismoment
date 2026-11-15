@@ -70,6 +70,7 @@ SQL은 `supabase/`에 번호순. 사용자가 SQL Editor에서 직접 실행한�
 - 원본 시안: `design/home-e-light.html`, `design/home-e-dark.html`
 - **색·간격·모서리는 `app/tokens.css`의 변수로만** 쓴다 (라이트 `:root`, 다크는 기기 설정 + 설정 화면 "화면 모드" 시스템/라이트/다크 → `<html data-theme>`, `js/theme.js`). 컴포넌트는 `styles.css`. 색을 직접 적지 말 것
 - 규칙: 1px 얇은 선, 모서리 카드 8 / 컨트롤 6 / 칩 4 / 시트 12, 그림자 없음, 색은 상태 표시에만(파랑=선택·오늘, 빨강=휴일·임박, 초록=울림)
+- 예외: 홈 맨 위 기념일 배너(`.since`)는 사용자 요청으로 금빛 왕관·이중 금테·그라데이션으로 화려하게 꾸밈 (색은 `--color-warn*` 토큰만 사용)
 - 일정 14색은 `--c-이름-bg/bar` 변수 (`colors.js`가 `var(...)` 반환 → 다크 자동)
 - 아이콘은 `util.js`의 `icons` (굵기 1.75). 디데이 카드 아이콘은 이름 키워드로 선택(`ddayIcon`)
 - 새 JS/CSS 파일은 `sw.js` SHELL에 추가하고 CACHE 버전 올릴 것

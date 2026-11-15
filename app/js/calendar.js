@@ -99,7 +99,7 @@ export const calendar = {
         <ul class="list" data-slot="day-list"></ul>
         <div class="side-dday" data-slot="side-dday"></div>
       </section>
-      <p class="muted small kbd-hint">← → 달 이동 · T 오늘 · N 새 일정 · / 검색</p>
+      <p class="muted small kbd-hint">← → 달 이동 · T 오늘 · N 새 일정 · / 검색 · 날짜 더블클릭 = 일정 추가</p>
       <p class="muted small center cal-tip" data-slot="tip">날짜를 길게 누른 채 끌면 여러 날 일정을 만들고,<br>일정을 길게 눌러 끌면 다른 날로 옮겨요.<br>휴일은 일정 추가 창의 ‘휴일’ 버튼으로 만들어요.</p>
       <button class="fab" data-action="add" aria-label="일정 추가">${icons.plus}</button>
       ${eventDialogHTML()}
@@ -133,11 +133,25 @@ export const calendar = {
       rerender();
     });
 
+    // 같은 날짜 칸을 0.4초 안에 두 번 누르면 그 날짜로 일정 추가 창을 연다.
+    // (한 번 누를 때마다 달력을 다시 그려서 브라우저의 dblclick 이벤트는 믿을 수 없다)
+    let lastTap = { iso: null, t: 0 };
     el.querySelector('[data-slot=grid]').addEventListener('click', (e) => {
       if (suppressClick) { suppressClick = false; return; }
       const c = e.target.closest('[data-date]');
       if (!c) return;
       const iso = c.dataset.date;
+      if (!e.target.closest('[data-event]')) {
+        const t = Date.now();
+        if (lastTap.iso === iso && t - lastTap.t < 400) {
+          lastTap = { iso: null, t: 0 };
+          selected = iso;
+          rerender();
+          dialog.open(null, iso);
+          return;
+        }
+        lastTap = { iso, t };
+      }
       const d = parseDate(iso);
       if (d.getMonth() !== viewM) {
         viewY = d.getFullYear();
@@ -181,6 +195,7 @@ export const calendar = {
     // ── 여러 날 끌어서 고르기 ──
     // 손가락: 0.35초 길게 누른 뒤 끌기 (그냥 밀면 달 넘기기/스크롤). 마우스: 누른 채 다른 날로 끌기.
     const grid = el.querySelector('[data-slot=grid]');
+
     const cellAt = (x, y) => document.elementFromPoint(x, y)?.closest('[data-date]');
     let ghost = null;
     const paint = () => {
@@ -370,7 +385,7 @@ export const calendar = {
               <span class="emo-btn ${ev.emoji ? '' : 'empty'}" role="button" tabindex="0" data-emoji-edit="${ev.id}" aria-label="이모티콘 ${ev.emoji ? '바꾸기' : '붙이기'}">${ev.emoji ? esc(ev.emoji) : '＋'}</span>
             </button>
           </li>`).join('')
-      : '<li class="empty muted">일정이 없어요.<span class="only-m"> 오른쪽 아래 + 로 추가하세요.</span><span class="only-d"> 왼쪽 위 ‘새 일정’으로 추가하세요.</span></li>';
+      : '<li class="empty muted">일정이 없어요.<br><span class="only-m">오른쪽 아래 + 로 추가하세요.</span><span class="only-d">왼쪽 위 ‘새 일정’으로 추가하세요.</span></li>';
 
     // 오른쪽 패널(데스크탑): 다가오는 디데이
     const up = [...s.data.ddays]

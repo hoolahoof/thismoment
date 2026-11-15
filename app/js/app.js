@@ -83,15 +83,13 @@ function update(s) {
   const sync = root.querySelector('[data-slot=sync]');
   if (sync) sync.innerHTML = s.status === 'live' ? '' : statusBadge(s.status);
 
-  // 사이드바 아래(데스크탑): 가장 가까운 디데이 + 동기화 상태
+  // 사이드바 아래(데스크탑): 가장 가까운 디데이
   const foot = root.querySelector('[data-slot=side-foot]');
   if (foot) {
     const up = [...s.data.ddays]
       .filter((x) => !x.count_up && daysUntil(x.target_date) >= 0)
       .sort((a, b) => a.target_date.localeCompare(b.target_date))[0];
-    foot.innerHTML =
-      (up ? `<div class="sf-dday"><span class="sf-title">${esc(up.title)}</span><strong>${ddayLabel(up)}</strong></div>` : '') +
-      `<div class="sf-sync">${s.status === 'live' ? '실시간 동기화됨' : statusBadge(s.status)}</div>`;
+    foot.innerHTML = up ? `<div class="sf-dday"><span class="sf-title">${esc(up.title)}</span><strong>${ddayLabel(up)}</strong></div>` : '';
   }
 }
 
