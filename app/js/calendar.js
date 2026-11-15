@@ -381,7 +381,7 @@ export function eventDialogHTML() {
         <label class="grow">날짜<input type="date" name="date" required></label>
         <label class="grow" data-when="allday">끝나는 날<input type="date" name="end_date"></label>
       </div>
-      <label class="check" data-when="newdday"><input type="checkbox" name="also_dday"> 디데이로도 등록 (홈·위젯에 D-숫자로 보여요)</label>
+      <label class="check" data-when="newdday"><input type="checkbox" name="also_dday"> 디데이로도 등록</label>
       <p class="muted small" data-when="ddaylink" hidden>디데이와 연결된 일정이에요. 이름·날짜를 바꾸면 디데이도 바뀌고, 지우면 디데이도 같이 지워져요.</p>
       <div class="form-row" data-when="timed">
         <label class="grow">시작<input type="time" name="start" value="09:00"></label>
