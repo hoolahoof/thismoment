@@ -81,7 +81,7 @@ const dday = {
         msg.classList.remove('error');
         msg.textContent = '';
       } catch (err) {
-        msg.textContent = '저장하지 못했어요: ' + err.message;
+        msg.textContent = '저장하지 못했어요: ' + err.message + (/emoji/.test(err.message) ? ' (이모티콘을 쓰려면 SQL 015 를 실행해야 해요)' : '');
         msg.classList.add('error');
       }
     });
