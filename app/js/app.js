@@ -14,7 +14,7 @@ const root = document.getElementById('app');
 const TABS = [
   { id: 'home', label: '홈' },
   { id: 'calendar', label: '캘린더' },
-  { id: 'diary', label: '오늘하루' },
+  { id: 'diary', label: '오늘 하루' },
   { id: 'alarm', label: '알람' },
   { id: 'settings', label: '설정' },
 ];

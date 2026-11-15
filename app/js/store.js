@@ -12,6 +12,7 @@ const state = {
   data: Object.fromEntries(TABLES.map((t) => [t, []])),
   holidays: [], // 대한민국 공휴일 (공용, 읽기 전용)
   diaryReady: false, // 일기 표(SQL 016)가 있는지
+  diaryError: '', // 일기 표를 못 읽었을 때 서버가 알려준 이유
 };
 
 const listeners = new Set();
@@ -53,11 +54,11 @@ async function loadAll() {
     if (res.error) {
       if (!OPTIONAL.has(t)) throw res.error;
       state.data[t] = [];
-      if (t === 'diary') state.diaryReady = false;
+      if (t === 'diary') { state.diaryReady = false; state.diaryError = res.error.message || String(res.error); }
       return;
     }
     state.data[t] = res.data;
-    if (t === 'diary') state.diaryReady = true;
+    if (t === 'diary') { state.diaryReady = true; state.diaryError = ''; }
   });
   if (hol.error) throw hol.error;
   state.holidays = hol.data;
@@ -115,6 +116,9 @@ async function resync() {
     setStatus('offline');
   }
 }
+
+// 다시 불러오기 (SQL 을 방금 실행했을 때 '다시 확인' 용)
+export const reload = () => resync();
 
 export async function start(user) {
   state.user = user;

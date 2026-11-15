@@ -1,4 +1,4 @@
-// 오늘하루: 하루에 하나씩 쓰는 일기. 가운데 큰 페이지에 쓰고, 위(어제)·아래(내일) 작고 흐린 페이지를 눌러 넘긴다.
+// 오늘 하루: 하루에 하나씩 쓰는 일기. 가운데 큰 페이지에 쓰고, 위(어제)·아래(내일) 작고 흐린 페이지를 눌러 넘긴다.
 // 입력하면 잠깐 멈춘 뒤 자동 저장된다 (저장 버튼 없음).
 import * as store from './store.js';
 import { esc, parseDate, toISODate, todayLocal, icons } from './util.js';
@@ -61,7 +61,7 @@ async function flush(iso) {
     await saveDay(iso, ta.value); // 값은 이 줄에서 바로 읽으므로 곧바로 다른 날로 바꿔도 안전
     setState(stateEl, '저장됨');
   } catch (err) {
-    const hint = /diary|schema cache|relation/i.test(err.message) ? ' (SQL 016 을 실행했는지 확인해 주세요)' : '';
+    const hint = /Could not find the table|schema cache/i.test(err.message) ? ' (SQL 016 을 실행했는지 확인해 주세요)' : '';
     const msg = '저장하지 못했어요: ' + err.message + hint;
     setState(stateEl, msg, true);
     if (!stateEl.isConnected) alert(msg); // 이미 다른 날로 넘어간 뒤의 실패는 화면에 자리가 없으니 알림으로
@@ -94,12 +94,14 @@ export const diary = {
     let cur = todayISO();
     el.innerHTML = `
       <header class="page-head">
-        <h1>오늘하루</h1>
-        <button class="btn pill" type="button" data-nav="today" hidden>오늘로</button>
+        <h1>오늘 하루</h1>
+        <button class="btn pill" type="button" data-nav="today" hidden>오늘 일기</button>
       </header>
       <div class="card placeholder diary-setup" data-slot="setup" hidden>
-        <strong>일기 저장 공간이 아직 없어요</strong>
-        <span class="muted small">Supabase 의 SQL Editor 에서 <code>supabase/016_diary.sql</code> 내용을 붙여넣고 Run 을 한 번 눌러 주세요. 그 뒤로 일기를 쓸 수 있어요.</span>
+        <strong>일기 표를 불러오지 못했어요</strong>
+        <span class="muted small">Supabase 에 <code>supabase/016_diary.sql</code> 을 실행하지 않았다면 SQL Editor 에서 한 번 Run 해 주세요. 이미 실행했다면 잠시 뒤 아래 버튼으로 다시 확인해 보세요.</span>
+        <span class="small red" data-slot="setup-err"></span>
+        <button class="btn pill" type="button" data-act="recheck">다시 확인</button>
       </div>
       <div class="diary-layout">
       <div class="diary-pager">
@@ -128,7 +130,7 @@ export const diary = {
           <div class="mc-grid" data-slot="mc-grid"></div>
         </section>
         <section class="card diary-search">
-          <input type="search" class="ds-input" data-slot="q" placeholder="일기 키워드 검색" autocomplete="off" aria-label="일기 키워드 검색">
+          <input type="search" class="ds-input" data-slot="q" placeholder="키워드 검색" autocomplete="off" aria-label="키워드 검색">
           <div class="ds-results" data-slot="results" role="list"></div>
         </section>
       </aside>
@@ -178,6 +180,7 @@ export const diary = {
       const iso = cur;
       const t = todayISO();
       el.querySelector('[data-slot=setup]').hidden = s.diaryReady;
+      el.querySelector('[data-slot=setup-err]').textContent = s.diaryError ? `서버 응답: ${s.diaryError}` : '';
       ta.disabled = !s.diaryReady;
       main.dataset.date = iso;
       main.classList.toggle('is-today', iso === t);
@@ -203,46 +206,52 @@ export const diary = {
       }
     };
 
-    // 다른 날로: 먼저 저장하고, 멀리 가면 사이 날짜들이 촤르륵 넘어가며 도착한다. 넘어가는 동안은 입력을 잠근다.
+    // 다른 날로: 먼저 저장한 뒤, 본문이 부드럽게 밀려 나갔다가 새 날짜가 밀려 들어온다.
+    // 멀리 갈 때는 나간 사이에 날짜(제목·달력 표시)가 빠르게 넘어가며(촤르륵) 도착한다. 이동하는 동안은 입력을 잠근다.
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const move = (kf, ms, easing) => (calm.matches ? Promise.resolve() : ta.animate(kf, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {}));
     let busy = false;
-    const go = (delta, absolute) => {
+    const go = async (delta, absolute) => {
       const target = absolute ?? addDays(cur, delta);
       if (target === cur || busy) return;
+      busy = true;
       const p = pending.get(cur);
       if (p) {
         p.stateEl = document.createElement('span'); // 저장 결과 표시가 새 날짜 칸을 어지럽히지 않게 떼어 둔다
         flush(cur);
       }
       setState(stateEl, '');
+      ta.readOnly = true;
       const start = cur;
       const diff = dayDiff(start, target);
+      const sign = diff > 0 ? 1 : -1;
       const steps = Math.min(Math.abs(diff), 9);
-      const dir = diff > 0 ? 'next' : 'prev';
-      busy = true;
-      ta.readOnly = true;
-      let k = 0;
-      const step = () => {
-        k += 1;
-        cur = k >= steps ? target : addDays(start, Math.round((diff * k) / steps));
-        main.style.animationDuration = steps > 1 ? '0.14s' : '';
-        main.classList.remove('slide-next', 'slide-prev');
-        void main.offsetWidth; // 같은 애니메이션을 다시 돌리기 위해
-        main.classList.add(`slide-${dir}`);
-        if (k >= steps) {
-          monthOf(cur);
-          paint(store.getState(), { force: true });
-          ta.readOnly = false;
-          busy = false;
-          window.scrollTo({ top: 0 });
-        } else {
-          paint(store.getState(), { force: true });
-          setTimeout(step, 70);
-        }
-      };
-      step();
+      // 1) 지금 본문이 위(또는 아래)로 사라진다
+      await move([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-sign * 22}px)`, opacity: 0 }], steps > 1 ? 180 : 140, 'cubic-bezier(0.4, 0, 1, 1)');
+      // 2) 멀리 가면 사이 날짜가 빠르게 넘어간다 (본문은 숨은 상태)
+      for (let k = 1; k < steps; k++) {
+        cur = addDays(start, Math.round((diff * k) / steps));
+        paint(store.getState(), { force: true });
+        await sleep(48);
+      }
+      // 3) 도착한 날짜의 본문이 밀려 들어온다
+      cur = target;
+      monthOf(cur);
+      paint(store.getState(), { force: true });
+      await move([{ transform: `translateY(${sign * 26}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], 300, 'cubic-bezier(0.22, 1, 0.36, 1)');
+      ta.getAnimations().forEach((an) => an.cancel());
+      ta.readOnly = false;
+      busy = false;
+      window.scrollTo({ top: 0, behavior: calm.matches ? 'auto' : 'smooth' });
     };
 
-    el.addEventListener('click', (e) => {
+    el.addEventListener('click', async (e) => {
+      if (e.target.closest('[data-act=recheck]')) {
+        await store.reload();
+        paint(store.getState(), { force: true });
+        return;
+      }
       const g = e.target.closest('[data-go]');
       if (g) return go(0, g.dataset.go);
       const m = e.target.closest('[data-mc]');
