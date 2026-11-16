@@ -410,7 +410,7 @@ export function eventDialogHTML() {
         <input type="hidden" name="emoji">
       </div>
       <div class="check-row">
-        <label class="check"><input type="checkbox" name="all_day"> 하루 종일</label>
+        <input type="checkbox" name="all_day" hidden>
         <button type="button" class="holiday-toggle" data-action="holiday" aria-pressed="false">휴일</button>
       </div>
       <p class="muted small" data-when="holiday-hint" hidden>달력에서 빨간 날로 보이고, ‘휴일엔 안 울림’으로 정한 알람은 울리지 않아요.</p>
@@ -420,10 +420,9 @@ export function eventDialogHTML() {
       </div>
       <label class="check" data-when="newdday"><input type="checkbox" name="also_dday"> D-Day로도 등록</label>
       <p class="muted small" data-when="ddaylink" hidden>D-Day와 연결된 일정이에요. 이름·날짜를 바꾸면 D-Day도 바뀌고, 지우면 D-Day도 같이 지워져요.</p>
-      <div class="form-row" data-when="timed">
-        <label class="grow">시작<input type="time" name="start" value="09:00"></label>
-        <label class="grow">끝<input type="time" name="end" value="10:00"></label>
-      </div>
+      <!-- 시간 입력은 없앴다. 예전에 시간을 넣어 만든 일정을 고칠 때 시간이 그대로 유지되도록 값만 숨겨 둔다 -->
+      <input type="hidden" name="start" value="09:00">
+      <input type="hidden" name="end" value="10:00">
       <label>반복
         <select name="repeat">
           <option value="">안 함</option>
@@ -615,7 +614,6 @@ export function setupEventDialog(root) {
     // 반복 일정에는 '끝나는 날'(여러 날 일정)을 쓰지 않으므로 반복을 고르면 숨긴다
     const repeating = !!f.namedItem('repeat').value;
     form.querySelectorAll('[data-when=allday]').forEach((n) => (n.hidden = !all || repeating));
-    form.querySelectorAll('[data-when=timed]').forEach((n) => (n.hidden = all));
   };
   f.namedItem('all_day').addEventListener('change', syncAllDay);
 
@@ -680,7 +678,7 @@ export function setupEventDialog(root) {
     dlg.querySelector('[data-slot=ev-dialog-title]').textContent = ev ? '일정 수정' : '일정 추가';
     dlg.querySelector('[data-action=delete]').hidden = !ev;
     f.namedItem('title').value = ev?.title ?? '';
-    f.namedItem('all_day').checked = ev?.all_day ?? !!opts.allDay;
+    f.namedItem('all_day').checked = ev ? !!ev.all_day : true; // 새 일정은 항상 날짜만 (시간 없음)
     f.namedItem('date').value = ev ? localISO(ev.starts_at) : dateISO;
     f.namedItem('end_date').value = ev?.all_day && ev.ends_at
       ? localISO(ev.ends_at)

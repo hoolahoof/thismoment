@@ -287,7 +287,7 @@ export const day = {
     const evs = eventsOn(iso, s.data.events);
     el.querySelector('[data-slot=allday]').innerHTML = evs
       .filter((ev) => ev.all_day)
-      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg};border-left-color:${colorOf(ev.color).bar}"><span class="allday-t">${ev.is_holiday ? '휴일' : '하루 종일'} · ${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${emojiTag(ev, 'emo-lg')}</button>`)
+      .map((ev) => `<button class="allday-chip" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg};border-left-color:${colorOf(ev.color).bar}"><span class="allday-t">${ev.is_holiday ? '휴일 · ' : ''}${esc(ev.title)}${ev.recurrence ? REPEAT_ICON : ''}</span>${emojiTag(ev, 'emo-lg')}</button>`)
       .join('');
 
     // 시간 블록

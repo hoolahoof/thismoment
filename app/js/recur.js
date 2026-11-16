@@ -15,7 +15,8 @@ export const hm = (ts) => {
   const d = new Date(ts);
   return `${p2(d.getHours())}:${p2(d.getMinutes())}`;
 };
-export const eventTime = (ev) => (ev.all_day ? '하루 종일' : `${hm(ev.starts_at)}–${ev.ends_at ? hm(ev.ends_at) : ''}`);
+// 시간이 없는(날짜만 있는) 일정은 빈 글자. 예전에 시간을 넣어 만든 일정만 '10:00–11:00' 로 보인다
+export const eventTime = (ev) => (ev.all_day ? '' : `${hm(ev.starts_at)}–${ev.ends_at ? hm(ev.ends_at) : ''}`);
 export const addDays = (iso, n) => {
   const d = parseDate(iso);
   return toISODate(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n));

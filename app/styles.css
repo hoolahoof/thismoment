@@ -352,6 +352,7 @@ a.btn { text-decoration: none; }
 .ev-bar { width: 3px; align-self: stretch; min-height: 36px; border-radius: 1px; flex: none; }
 .ev-text { display: flex; flex-direction: column; min-width: 0; }
 .ev-time { font-size: var(--font-size-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.ev-time:empty { display: none; }
 .ev-title { font-size: var(--font-size-md); font-weight: var(--font-weight-medium); display: flex; flex-direction: column; min-width: 0; }
 .ev-note { font-weight: var(--font-weight-regular); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-row.past { opacity: 0.55; }
