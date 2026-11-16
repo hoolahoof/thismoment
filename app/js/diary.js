@@ -224,7 +224,7 @@ export const diary = {
     // 멀리 갈 때는 나간 사이에 날짜(제목·달력 표시)가 빠르게 넘어가며(촤르륵) 도착한다. 이동하는 동안은 입력을 잠근다.
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const move = (kf, ms, easing) => (calm.matches ? Promise.resolve() : ta.animate(kf, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {}));
+    const move = (kf, ms, easing) => (calm.matches ? Promise.resolve() : main.animate(kf, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {}));
     let busy = false;
     const go = async (delta, absolute) => {
       const target = absolute ?? addDays(cur, delta);
@@ -241,20 +241,21 @@ export const diary = {
       const diff = dayDiff(start, target);
       const sign = diff > 0 ? 1 : -1;
       const steps = Math.min(Math.abs(diff), 9);
-      // 1) 지금 본문이 위(또는 아래)로 사라진다
-      await move([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-sign * 22}px)`, opacity: 0 }], steps > 1 ? 180 : 140, 'cubic-bezier(0.4, 0, 1, 1)');
+      // 1) 지금 카드 전체(제목·스티커·본문)가 위(또는 아래)로 밀려 나간다. 멀리 갈 때는 날짜가 넘어가는 게 보이도록 완전히 지우지 않는다
+      const low = steps > 1 ? 0.3 : 0;
+      await move([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-sign * 26}px)`, opacity: low }], steps > 1 ? 180 : 150, 'cubic-bezier(0.4, 0, 1, 1)');
       // 2) 멀리 가면 사이 날짜가 빠르게 넘어간다 (본문은 숨은 상태)
       for (let k = 1; k < steps; k++) {
         cur = addDays(start, Math.round((diff * k) / steps));
         paint(store.getState(), { force: true });
         await sleep(48);
       }
-      // 3) 도착한 날짜의 본문이 밀려 들어온다
+      // 3) 도착한 날짜의 카드 전체가 반대쪽에서 밀려 들어온다
       cur = target;
       monthOf(cur);
       paint(store.getState(), { force: true });
-      await move([{ transform: `translateY(${sign * 26}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], 300, 'cubic-bezier(0.22, 1, 0.36, 1)');
-      ta.getAnimations().forEach((an) => an.cancel());
+      await move([{ transform: `translateY(${sign * 30}px)`, opacity: low }, { transform: 'none', opacity: 1 }], 320, 'cubic-bezier(0.22, 1, 0.36, 1)');
+      main.getAnimations().forEach((an) => an.cancel());
       ta.readOnly = false;
       busy = false;
       window.scrollTo({ top: 0, behavior: calm.matches ? 'auto' : 'smooth' });
