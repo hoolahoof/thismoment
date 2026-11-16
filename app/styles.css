@@ -307,6 +307,10 @@ a.btn { text-decoration: none; }
 .cal-week span { text-align: center; font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-muted); }
 .cal-week span.red { color: var(--color-danger); }
 .cal-week span.blue { color: var(--color-accent); }
+.cal-viewport { overflow: hidden; }
+.cal-track { display: flex; align-items: flex-start; width: 300%; transform: translateX(-33.3333%); will-change: transform; }
+.cal-track > .cal-grid { flex: 0 0 33.3333%; min-width: 0; }
+.cal-ghost { pointer-events: none; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .cal-cell {
   min-height: 76px; min-width: 0; padding: 3px 2px 4px; border: 0; border-radius: 0; background: transparent;

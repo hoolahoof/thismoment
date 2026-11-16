@@ -72,6 +72,44 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === '/') { e.preventDefault(); ctx.openSearch(); }
 });
 
+// 한 달 치 칸 HTML (y년 m월; m 은 0부터)
+function monthHTML(y, m, s) {
+  const first = new Date(y, m, 1);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const weeks = Math.ceil((first.getDay() + daysInMonth) / 7);
+  const start = new Date(y, m, 1 - first.getDay());
+  const todayISO = toISODate(today);
+  const cells = [];
+  for (let i = 0; i < weeks * 7; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const iso = toISODate(d);
+    const dow = d.getDay();
+    const h = holidayOn(iso, s);
+    const hol = h.kr || h.custom;
+    const evs = eventsOn(iso, s.data.events).filter((e) => !e.is_holiday);
+    const cls = [
+      'cal-cell',
+      d.getMonth() !== m ? 'other' : '',
+      iso === todayISO ? 'today' : '',
+      iso === selected ? 'selected' : '',
+      hol || dow === 0 ? 'red' : dow === 6 ? 'blue' : '',
+    ].join(' ');
+    const maxChips = WIDE.matches ? (hol ? 2 : 3) : (hol ? 1 : 2);
+    const chips = evs.slice(0, maxChips)
+      .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}"><span class="chip-t">${esc(ev.title)}</span>${emojiTag(ev)}</span>`)
+      .join('');
+    const more = evs.length > maxChips ? `<span class="chip-more">+${evs.length - maxChips}</span>` : '';
+    const label = `${d.getMonth() + 1}월 ${d.getDate()}일${hol ? `, ${hol}` : ''}${evs.length ? `, 일정 ${evs.length}개` : ''}`;
+    cells.push(`
+      <button class="${cls}" data-date="${iso}" aria-label="${esc(label)}" aria-pressed="${iso === selected}">
+        <span class="cal-num">${d.getDate()}</span>
+        ${hol ? `<span class="cal-hol">${esc(hol)}</span>` : ''}
+        ${chips}${more}
+      </button>`);
+  }
+  return cells.join('');
+}
+
 export const calendar = {
   mount(el) {
     el.innerHTML = `
@@ -88,7 +126,13 @@ export const calendar = {
       </header>
       <section class="card cal" data-slot="cal">
         <div class="cal-week">${WD.map((w, i) => `<span class="${i === 0 ? 'red' : i === 6 ? 'blue' : ''}">${w}</span>`).join('')}</div>
-        <div class="cal-grid" data-slot="grid" role="grid"></div>
+        <div class="cal-viewport" data-slot="cal-vp">
+          <div class="cal-track" data-slot="track">
+            <div class="cal-grid cal-ghost" data-slot="grid-prev" aria-hidden="true" inert></div>
+            <div class="cal-grid" data-slot="grid" role="grid"></div>
+            <div class="cal-grid cal-ghost" data-slot="grid-next" aria-hidden="true" inert></div>
+          </div>
+        </div>
       </section>
       <section class="day-panel" data-slot="day-panel">
         <div class="day-panel-head">
@@ -108,10 +152,38 @@ export const calendar = {
     const rerender = () => calendar.update(el, store.getState());
     let suppressClick = false;
 
-    const shift = (delta) => {
-      shiftMonth(delta);
-      rerender();
+    // ── 달 넘기기: 손가락을 따라 달력이 움직이고, 놓으면 부드럽게 다음(이전) 달로 자리 잡는다 ──
+    const cal = el.querySelector('[data-slot=cal]');
+    const track = el.querySelector('[data-slot=track]');
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const at = (px) => `translateX(calc(-33.3333% + ${px}px))`; // 가운데 칸이 보이는 자리 + 손가락 이동량
+    let sliding = false;
+    // dir: 1 다음 달, -1 이전 달, 0 제자리로 돌아오기
+    const settle = (dir) => {
+      const w = cal.clientWidth;
+      if (calm.matches) {
+        track.style.transition = 'none';
+        if (dir) { shiftMonth(dir); rerender(); }
+        track.style.transform = at(0);
+        sliding = false;
+        return;
+      }
+      sliding = true;
+      let finished = false;
+      const done = () => {
+        if (finished) return;
+        finished = true;
+        track.style.transition = 'none';
+        if (dir) { shiftMonth(dir); rerender(); } // 새 달을 가운데에 다시 그리고 같은 프레임에 제자리로
+        track.style.transform = at(0);
+        sliding = false;
+      };
+      track.style.transition = 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+      track.style.transform = at(-dir * w);
+      track.addEventListener('transitionend', done, { once: true });
+      setTimeout(done, 420); // 움직임이 없을 때(제자리 0px)도 마무리되도록
     };
+    const shift = (delta) => { if (!sliding) settle(delta); };
     const goToday = () => {
       viewY = today.getFullYear();
       viewM = today.getMonth();
@@ -163,18 +235,52 @@ export const calendar = {
 
     const range = { active: false, start: null, end: null, timer: null, x: 0, y: 0, type: '', chip: null };
 
-    // 좌우로 밀어서 달(주간은 주) 넘기기
-    let x0 = null, y0 = null;
-    for (const area of [el.querySelector('[data-slot=cal]')]) {
-      area.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
-      area.addEventListener('touchend', (e) => {
-        if (x0 === null || range.active) { x0 = null; return; }
-        const dx = e.changedTouches[0].clientX - x0;
-        const dy = e.changedTouches[0].clientY - y0;
-        x0 = null;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) shift(dx < 0 ? 1 : -1);
-      });
-    }
+    // 좌우로 밀기: 가로로 움직이는 것이 분명할 때만 달력이 손가락을 따라가고(세로 스크롤은 그대로), 놓는 순간 거리·속도로 넘길지 정한다
+    let sx = null, sy = null, dx = 0, mode = null, lastX = 0, lastT = 0, vx = 0;
+    cal.addEventListener('touchstart', (e) => {
+      if (sliding || e.touches.length > 1) { sx = null; return; }
+      sx = lastX = e.touches[0].clientX;
+      sy = e.touches[0].clientY;
+      lastT = performance.now();
+      dx = 0; vx = 0; mode = null;
+      track.style.transition = 'none';
+    }, { passive: true });
+    cal.addEventListener('touchmove', (e) => {
+      if (sx === null || range.active) return;
+      const x = e.touches[0].clientX;
+      dx = x - sx;
+      const dy = e.touches[0].clientY - sy;
+      if (!mode) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';
+      }
+      if (mode !== 'h') return;
+      const now = performance.now();
+      vx = (x - lastX) / Math.max(1, now - lastT);
+      lastX = x; lastT = now;
+      track.style.transform = at(dx);
+    }, { passive: true });
+    const release = () => {
+      if (sx === null) return;
+      sx = null;
+      if (mode !== 'h' || range.active) { if (mode === 'h') settle(0); return; }
+      const far = Math.abs(dx) > cal.clientWidth * 0.25;
+      const flick = Math.abs(vx) > 0.5 && Math.abs(dx) > 24; // 짧아도 빠르게 튕기면 넘김
+      settle(far || flick ? (dx < 0 ? 1 : -1) : 0);
+    };
+    cal.addEventListener('touchend', release);
+    cal.addEventListener('touchcancel', release);
+    // 트랙패드 가로 스크롤도 달 넘기기로
+    let wheelAcc = 0, wheelT = 0;
+    cal.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      const now = performance.now();
+      if (now - wheelT > 300) wheelAcc = 0;
+      wheelT = now;
+      wheelAcc += e.deltaX;
+      if (Math.abs(wheelAcc) > 60 && !sliding) { const dir = wheelAcc > 0 ? 1 : -1; wheelAcc = 0; wheelT = now + 500; settle(dir); }
+    }, { passive: false });
 
     const dialog = setupEventDialog(el);
 
@@ -325,48 +431,15 @@ export const calendar = {
   update(el, s) {
     el.querySelector('[data-slot=title]').textContent = `${viewY}년 ${viewM + 1}월`;
 
-    // 달력 칸
-    const first = new Date(viewY, viewM, 1);
-    const daysInMonth = new Date(viewY, viewM + 1, 0).getDate();
-    const weeks = Math.ceil((first.getDay() + daysInMonth) / 7);
-    const start = new Date(viewY, viewM, 1 - first.getDay());
+    // 달력 칸: 가운데(이번 달) + 양옆 미리보기(이전·다음 달). 손가락으로 밀 때 옆 달이 같이 딸려 들어온다.
     const todayISO = toISODate(today);
-    const cells = [];
-    for (let i = 0; i < weeks * 7; i++) {
-      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-      const iso = toISODate(d);
-      const dow = d.getDay();
-      const h = holidayOn(iso, s);
-      const hol = h.kr || h.custom;
-      const evs = eventsOn(iso, s.data.events).filter((e) => !e.is_holiday);
-      const other = d.getMonth() !== viewM;
-      // 이전 달·다음 달과 이번 달이 맞닿는 선은 더 진하게 (오른쪽 칸 / 아래 칸과 달이 다르면)
-      const mo = (n) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + n).getMonth() !== viewM;
-      const edgeR = i % 7 < 6 && mo(i + 1) !== other;
-      const edgeB = i + 7 < weeks * 7 && mo(i + 7) !== other;
-      const cls = [
-        'cal-cell',
-        other ? 'other' : '',
-        edgeR ? 'edge-r' : '',
-        edgeB ? 'edge-b' : '',
-        iso === todayISO ? 'today' : '',
-        iso === selected ? 'selected' : '',
-        hol || dow === 0 ? 'red' : dow === 6 ? 'blue' : '',
-      ].join(' ');
-      const maxChips = WIDE.matches ? (hol ? 2 : 3) : (hol ? 1 : 2);
-      const chips = evs.slice(0, maxChips)
-        .map((ev) => `<span class="chip-ev" data-event="${ev.id}" data-occ="${ev._occ}" style="background:${colorOf(ev.color).bg}"><span class="chip-t">${esc(ev.title)}</span>${emojiTag(ev)}</span>`)
-        .join('');
-      const more = evs.length > maxChips ? `<span class="chip-more">+${evs.length - maxChips}</span>` : '';
-      const label = `${d.getMonth() + 1}월 ${d.getDate()}일${hol ? `, ${hol}` : ''}${evs.length ? `, 일정 ${evs.length}개` : ''}`;
-      cells.push(`
-        <button class="${cls}" data-date="${iso}" aria-label="${esc(label)}" aria-pressed="${iso === selected}">
-          <span class="cal-num">${d.getDate()}</span>
-          ${hol ? `<span class="cal-hol">${esc(hol)}</span>` : ''}
-          ${chips}${more}
-        </button>`);
-    }
-    el.querySelector('[data-slot=grid]').innerHTML = cells.join('');
+    const pm = new Date(viewY, viewM - 1, 1);
+    const nm = new Date(viewY, viewM + 1, 1);
+    const gridEl = el.querySelector('[data-slot=grid]');
+    gridEl.innerHTML = monthHTML(viewY, viewM, s);
+    el.querySelector('[data-slot=grid-prev]').innerHTML = monthHTML(pm.getFullYear(), pm.getMonth(), s);
+    el.querySelector('[data-slot=grid-next]').innerHTML = monthHTML(nm.getFullYear(), nm.getMonth(), s);
+    el.querySelector('[data-slot=cal-vp]').style.height = `${gridEl.offsetHeight}px`; // 보이는 높이는 이번 달 기준
 
     // 선택한 날
     const h = holidayOn(selected, s);
