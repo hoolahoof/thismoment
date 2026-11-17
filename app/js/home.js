@@ -61,17 +61,17 @@ export const home = {
         <ul class="list" data-slot="todos"></ul>
       </section>
 
-      <section class="home-sec" data-sec="alarms">
-        <h2 class="section-title">알람</h2>
-        <section class="card" data-slot="alarms"></section>
-      </section>
-
       <section class="home-sec" data-sec="diary" hidden>
         <div class="section-row">
           <h2 class="section-title">오늘 하루</h2>
           <a class="home-link" href="#/diary">쓰러 가기 ›</a>
         </div>
         <a class="card diary-home" href="#/diary" data-slot="diary"></a>
+      </section>
+
+      <section class="home-sec" data-sec="alarms">
+        <h2 class="section-title">알람</h2>
+        <section class="card" data-slot="alarms"></section>
       </section>
 
       <p class="home-all-empty muted" data-slot="all-empty" hidden>오늘은 예정된 일정·할 일·알람이 없어요. <a href="#/calendar">일정 추가하기</a></p>
