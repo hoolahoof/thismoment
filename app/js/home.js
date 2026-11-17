@@ -37,6 +37,7 @@ export const home = {
   mount(el) {
     el.innerHTML = `
       <div class="since" data-slot="since"></div>
+      <div class="home-body">
       <header class="page-head home-head">
         <div class="home-head-text">
           <span class="eyebrow">오늘</span>
@@ -82,7 +83,8 @@ export const home = {
           <span class="quote-author" data-slot="q-author"></span>
         </span>
         <span class="quote-timer" aria-hidden="true"></span>
-      </button>`;
+      </button>
+      </div>`;
 
     el.addEventListener('click', async (e) => {
       // 디데이 카드: 캘린더에서 그 날짜를 열기

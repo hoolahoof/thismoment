@@ -725,11 +725,12 @@ dialog.sheet.tall { height: 92dvh; }
   .sd-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sd-count { font-weight: var(--font-weight-bold); white-space: nowrap; }
 
-  /* 홈: 2단 (머리·디데이는 전체 폭, 일정/할 일/알람은 두 줄로 나란히) */
-  .view:has(.home-head) { max-width: 1040px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-6); row-gap: var(--space-3); align-content: start; }
-  .view:has(.home-head) > .since, .view:has(.home-head) > .home-head, .view:has(.home-head) > .dday-grid,
-  .view:has(.home-head) > .home-all-empty, .view:has(.home-head) > .quote { grid-column: 1 / -1; }
-  .view:has(.home-head) > .home-sec[data-sec=alarms] { grid-column: 1 / -1; }
+  /* 홈: 맨 위 배너 + 나머지(home-body)는 2단 (머리·디데이는 전체 폭, 일정/할 일은 나란히) */
+  .view:has(.home-head) { max-width: 1040px; }
+  .home-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-6); row-gap: var(--space-3); }
+  .home-body > .home-head, .home-body > .dday-grid, .home-body > .dday-more,
+  .home-body > .home-all-empty, .home-body > .quote { grid-column: 1 / -1; }
+  .home-body > .home-sec[data-sec=alarms] { grid-column: 1 / -1; }
   .dday-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
@@ -738,23 +739,21 @@ dialog.sheet.tall { height: 92dvh; }
 .dday-more:hover { color: var(--color-accent); }
 .side-title a { color: inherit; text-decoration: none; }
 .side-title a:hover { color: var(--color-accent); }
-.diary-pager { display: flex; flex-direction: column; gap: var(--space-2); }
-.diary-nav { align-self: center; width: 56px; height: 32px; border: 0; border-radius: var(--radius-control); background: var(--color-surface-2); color: var(--color-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.diary-nav:hover { color: var(--color-accent); background: var(--color-accent-soft); }
-.diary-nav svg { width: 22px; height: 22px; }
-/* 위·아래 이웃 페이지: 작고 흐리게 (비활성화 느낌), 누르면 그쪽으로 */
+/* 가운데 큰 페이지 + 좌우의 작고 흐린 이웃 페이지(비활성화 느낌). 이웃 페이지를 누르면 그쪽으로 넘어간다 */
+.diary-pager { display: grid; grid-template-columns: 50px minmax(0, 1fr) 50px; gap: var(--space-2); align-items: stretch; }
 .diary-peek {
-  display: flex; flex-direction: column; gap: 2px; width: calc(100% - 2 * var(--space-4)); align-self: center; min-height: 56px;
-  padding: var(--space-2) var(--space-3); text-align: left; cursor: pointer; color: var(--color-text);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3) 2px;
+  text-align: center; cursor: pointer; color: var(--color-text); overflow: hidden;
   background: var(--color-surface); border: 1px solid var(--color-line); border-radius: var(--radius-card);
   opacity: 0.45; transition: opacity 0.25s ease, transform 0.25s ease;
 }
-.diary-peek:hover, .diary-peek:focus-visible { opacity: 0.8; }
-.diary-peek:active { transform: scale(0.99); }
-.peek-date { font-size: var(--font-size-xs); color: var(--color-muted); display: flex; align-items: baseline; gap: 6px; }
+.diary-peek:hover, .diary-peek:focus-visible { opacity: 0.85; }
+.diary-peek:active { transform: scale(0.98); }
+.peek-arrow { color: var(--color-muted); display: flex; }
+.peek-arrow svg { width: 22px; height: 22px; }
+.peek-date { font-size: 11px; line-height: 1.35; color: var(--color-muted); display: flex; flex-direction: column; align-items: center; gap: 2px; word-break: keep-all; }
 .peek-date b { font-weight: var(--font-weight-bold); }
-.peek-text { font-size: var(--font-size-sm); line-height: 1.5; color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
-.peek-text:empty { display: none; }
+.peek-text { display: none; }
 .diary-main { padding: var(--space-3) var(--space-3) var(--space-4); }
 .diary-day { display: flex; flex-direction: column; gap: var(--space-3); }
 .diary-day.is-today { box-shadow: inset 3px 0 0 var(--color-accent); }
@@ -809,12 +808,18 @@ dialog.sheet.tall { height: 92dvh; }
 .ds-snip { font-size: var(--font-size-sm); line-height: 1.5; word-break: break-word; }
 .ds-snip mark { background: var(--color-warn-soft); color: inherit; border-radius: 2px; padding: 0 1px; }
 @media (min-width: 900px) {
-  .view:has(.diary-layout) { max-width: 1100px; }
+  .view:has(.diary-layout) { max-width: 1180px; }
+  .diary-pager { grid-template-columns: 124px minmax(0, 1fr) 124px; }
+  .diary-peek { align-items: stretch; text-align: left; padding: var(--space-3); }
+  .peek-arrow { align-self: center; }
+  .peek-date { align-items: flex-start; font-size: var(--font-size-xs); }
+  .peek-text { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; word-break: break-word; font-size: var(--font-size-sm); line-height: 1.5; color: var(--color-text); }
+  .peek-text:empty { display: none; }
   .diary-main { padding: var(--space-4) var(--space-4) var(--space-5); }
   .diary-text { min-height: clamp(260px, 46dvh, 560px); font-size: var(--font-size-lg); line-height: 1.8; }
   .diary-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-6); align-items: start; }
   .diary-side { position: sticky; top: var(--space-8); }
-  .view:has(.home-head) > .dday-more { grid-column: 1 / -1; margin-top: 0; }
+  .home-body > .dday-more { margin-top: 0; }
 }
 
 /* 홈 하단: 오늘 하루 미리보기 */
@@ -824,11 +829,16 @@ dialog.sheet.tall { height: 92dvh; }
 .diary-home:hover { background: var(--color-surface-2); }
 .dh-text { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; word-break: break-word; font-size: var(--font-size-md); line-height: 1.7; }
 .dh-empty { font-size: var(--font-size-md); }
-@media (min-width: 900px) { .view:has(.home-head) > .home-sec[data-sec=diary] { grid-column: 1 / -1; } }
+@media (min-width: 900px) { .home-body > .home-sec[data-sec=diary] { grid-column: 1 / -1; } }
+/* 홈의 나머지 내용(home-body): 폰에서는 세로로 쌓고, 배너(.since)는 항상 맨 위 */
+.home-body { display: flex; flex-direction: column; gap: var(--space-3); }
+@media (min-width: 900px) { .home-body { display: grid; } }
 
 /* 앱으로 설치해서 연 창(standalone)이나 넓은 화면에서는 내용이 위에 붙지 않고 세로 가운데에 오게 한다.
    내용이 화면보다 길면 평소처럼 위에서부터 늘어난다. */
 @media (display-mode: standalone), (min-width: 900px) {
   .view { min-height: 100vh; min-height: 100dvh; justify-content: center; }
-  .view:has(.home-head) { align-content: center; }
+  /* 홈: 배너는 맨 위에 두고, 나머지 내용만 남은 공간의 가운데에 놓는다 */
+  .view:has(.home-body) { justify-content: flex-start; }
+  .home-body { flex: 1 1 auto; justify-content: center; align-content: center; }
 }

@@ -85,17 +85,19 @@ const grow = (ta) => {
   ta.style.height = `${ta.scrollHeight + 2}px`;
 };
 
-// 키보드: 쓰고 있지 않을 때 ↑ ↓ 로 넘기기 (데스크탑)
+// 키보드: 쓰고 있지 않을 때 ← → 로 넘기기 (데스크탑)
 let ctx = null;
 window.addEventListener('keydown', (e) => {
   if (!ctx?.el.isConnected || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
   if (document.querySelector('dialog[open]')) return;
   const t = e.target;
   if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
-  if (e.key === 'ArrowUp') { e.preventDefault(); ctx.go(-1); }
-  else if (e.key === 'ArrowDown') { e.preventDefault(); ctx.go(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); ctx.go(-1); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); ctx.go(1); }
 });
 
+// 좌우 화살표 (옆 페이지 위에 얹는다)
+const arrow = (dir) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${dir < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'}"/></svg>`;
 const chevron = (up) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${up ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'}"/></svg>`;
 
 export const diary = {
@@ -114,8 +116,7 @@ export const diary = {
       </div>
       <div class="diary-layout">
       <div class="diary-pager">
-        <button class="diary-nav" type="button" data-nav="-1" aria-label="이전 날">${chevron(true)}</button>
-        <button class="diary-peek" type="button" data-nav="-1" data-slot="peek-prev"></button>
+        <button class="diary-peek prev" type="button" data-nav="-1" data-slot="peek-prev"></button>
         <section class="card diary-day diary-main" data-slot="main">
           <header class="diary-head">
             <h2 data-slot="title"></h2>
@@ -125,8 +126,7 @@ export const diary = {
           </header>
           <textarea class="diary-text" maxlength="5000"></textarea>
         </section>
-        <button class="diary-peek" type="button" data-nav="1" data-slot="peek-next"></button>
-        <button class="diary-nav" type="button" data-nav="1" aria-label="다음 날">${chevron(false)}</button>
+        <button class="diary-peek next" type="button" data-nav="1" data-slot="peek-next"></button>
       </div>
       <aside class="diary-side">
         <section class="card mini-cal" aria-label="일기 달력">
@@ -149,10 +149,10 @@ export const diary = {
     const ta = main.querySelector('textarea');
     const stateEl = main.querySelector('[data-slot=state]');
 
-    const peekHTML = (iso, s) => {
+    const peekHTML = (iso, s, dir) => {
       const row = s.data.diary.find((r) => r.entry_date === iso);
       const tag = tagOf(iso);
-      return `<span class="peek-date">${tag ? `<b>${tag}</b>` : ''}<span class="${toneOf(iso, s)}">${dateText(iso)}</span></span><span class="peek-text">${esc(row?.body ?? '')}</span>`;
+      return `<span class="peek-arrow">${arrow(dir)}</span><span class="peek-date">${tag ? `<b>${tag}</b>` : ''}<span class="${toneOf(iso, s)}">${dateText(iso)}</span></span><span class="peek-text">${esc(row?.body ?? '')}</span>`;
     };
 
     // ── 오른쪽: 미니 달력 / 키워드 검색 ──
@@ -205,8 +205,8 @@ export const diary = {
       ta.placeholder = iso === t ? '오늘 하루는 어땠나요?' : ''; // 안내 문구는 오늘 칸에만
       ta.setAttribute('aria-label', `${dateText(iso)} 일기`);
       el.querySelector('[data-nav=today]').hidden = iso === t;
-      el.querySelector('[data-slot=peek-prev]').innerHTML = peekHTML(addDays(iso, -1), s);
-      el.querySelector('[data-slot=peek-next]').innerHTML = peekHTML(addDays(iso, 1), s);
+      el.querySelector('[data-slot=peek-prev]').innerHTML = peekHTML(addDays(iso, -1), s, -1);
+      el.querySelector('[data-slot=peek-next]').innerHTML = peekHTML(addDays(iso, 1), s, 1);
       el.querySelector('[data-slot=peek-prev]').setAttribute('aria-label', `${dateText(addDays(iso, -1))} 일기로 이동`);
       el.querySelector('[data-slot=peek-next]').setAttribute('aria-label', `${dateText(addDays(iso, 1))} 일기로 이동`);
       paintCal(s);
@@ -243,7 +243,7 @@ export const diary = {
       const steps = Math.min(Math.abs(diff), 9);
       // 1) 지금 카드 전체(제목·스티커·본문)가 위(또는 아래)로 밀려 나간다. 멀리 갈 때는 날짜가 넘어가는 게 보이도록 완전히 지우지 않는다
       const low = steps > 1 ? 0.3 : 0;
-      await move([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-sign * 26}px)`, opacity: low }], steps > 1 ? 180 : 150, 'cubic-bezier(0.4, 0, 1, 1)');
+      await move([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-sign * 26}px)`, opacity: low }], steps > 1 ? 180 : 150, 'cubic-bezier(0.4, 0, 1, 1)');
       // 2) 멀리 가면 사이 날짜가 빠르게 넘어간다 (본문은 숨은 상태)
       for (let k = 1; k < steps; k++) {
         cur = addDays(start, Math.round((diff * k) / steps));
@@ -254,7 +254,7 @@ export const diary = {
       cur = target;
       monthOf(cur);
       paint(store.getState(), { force: true });
-      await move([{ transform: `translateY(${sign * 30}px)`, opacity: low }, { transform: 'none', opacity: 1 }], 320, 'cubic-bezier(0.22, 1, 0.36, 1)');
+      await move([{ transform: `translateX(${sign * 30}px)`, opacity: low }, { transform: 'none', opacity: 1 }], 320, 'cubic-bezier(0.22, 1, 0.36, 1)');
       main.getAnimations().forEach((an) => an.cancel());
       ta.readOnly = false;
       busy = false;
