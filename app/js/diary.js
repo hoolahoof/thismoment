@@ -104,9 +104,11 @@ export const diary = {
   mount(el) {
     let cur = todayISO();
     el.innerHTML = `
-      <header class="page-head">
-        <h1>오늘 하루</h1>
-        <button class="btn pill" type="button" data-nav="today" hidden>오늘 일기</button>
+      <header class="diary-top">
+        <div class="dt-title"><span class="dt-eyebrow">오늘 하루</span><h1 data-slot="title"></h1></div>
+        <button class="dt-btn dt-prev" type="button" data-nav="-1" aria-label="이전 날">${arrow(-1)}</button>
+        <button class="dt-btn dt-today" type="button" data-nav="today" hidden>오늘로</button>
+        <button class="dt-btn dt-next" type="button" data-nav="1" aria-label="다음 날">${arrow(1)}</button>
       </header>
       <div class="card placeholder diary-setup" data-slot="setup" hidden>
         <strong>일기 표를 불러오지 못했어요</strong>
@@ -114,19 +116,25 @@ export const diary = {
         <span class="small red" data-slot="setup-err"></span>
         <button class="btn pill" type="button" data-act="recheck">다시 확인</button>
       </div>
+      <nav class="diary-week" data-slot="week" aria-label="이번 주"></nav>
       <div class="diary-layout">
-      <div class="diary-pager">
-        <button class="diary-peek prev" type="button" data-nav="-1" data-slot="peek-prev"></button>
+      <div class="diary-col">
         <section class="card diary-day diary-main" data-slot="main">
-          <header class="diary-head">
-            <h2 data-slot="title"></h2>
+          <div class="diary-head" data-slot="head">
             <span class="red small" data-slot="hol"></span>
             <div class="diary-stickers" data-slot="stickers"></div>
-            <span class="diary-state muted small" data-slot="state" role="status"></span>
-          </header>
+          </div>
           <textarea class="diary-text" maxlength="5000"></textarea>
+          <footer class="diary-foot">
+            <span class="muted small" data-slot="count"></span>
+            <span class="diary-state muted small" data-slot="state" role="status"></span>
+          </footer>
         </section>
-        <button class="diary-peek next" type="button" data-nav="1" data-slot="peek-next"></button>
+        <button class="card diary-prev" type="button" data-nav="-1" data-slot="peek-prev"></button>
+        <div class="diary-mtools">
+          <button class="btn" type="button" data-open="cal">${icons.calendar}달력</button>
+          <button class="btn" type="button" data-open="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>지난 기록 검색</button>
+        </div>
       </div>
       <aside class="diary-side">
         <section class="card mini-cal" aria-label="일기 달력">
@@ -137,9 +145,10 @@ export const diary = {
           </header>
           <div class="mc-week">${WD.map((w, i) => `<span class="${i === 0 ? 'red' : i === 6 ? 'blue' : ''}">${w}</span>`).join('')}</div>
           <div class="mc-grid" data-slot="mc-grid"></div>
+          <p class="mc-legend"><i aria-hidden="true"></i>기록이 있는 날</p>
         </section>
         <section class="card diary-search">
-          <input type="search" class="ds-input" data-slot="q" placeholder="키워드 검색" autocomplete="off" aria-label="키워드 검색">
+          <label class="ds-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" class="ds-input" data-slot="q" placeholder="키워드로 지난 기록 찾기" autocomplete="off" aria-label="키워드 검색"></label>
           <div class="ds-results" data-slot="results" role="list"></div>
         </section>
       </aside>
@@ -149,10 +158,11 @@ export const diary = {
     const ta = main.querySelector('textarea');
     const stateEl = main.querySelector('[data-slot=state]');
 
-    const peekHTML = (iso, s, dir) => {
+    const peekHTML = (iso, s) => {
       const row = s.data.diary.find((r) => r.entry_date === iso);
       const tag = tagOf(iso);
-      return `<span class="peek-arrow">${arrow(dir)}</span><span class="peek-date">${tag ? `<b>${tag}</b>` : ''}<span class="${toneOf(iso, s)}">${dateText(iso)}</span></span><span class="peek-text">${esc(row?.body ?? '')}</span>`;
+      const body = row?.body.trim() ? `<span class="dp-text">${esc(row.body.trim().split('\n')[0])}</span>` : '<span class="dp-text muted">쓴 기록이 없어요</span>';
+      return `<span class="dp-date">${tag ? `${tag} · ` : ''}<span class="${toneOf(iso, s)}">${dateText(iso)}</span></span>${body}<span class="dp-arrow">${arrow(1)}</span>`;
     };
 
     // ── 오른쪽: 미니 달력 / 키워드 검색 ──
@@ -177,7 +187,13 @@ export const diary = {
     const paintSearch = (s) => {
       const k = q.value.trim();
       const box = el.querySelector('[data-slot=results]');
-      if (!k) { box.innerHTML = ''; return; }
+      if (!k) {
+        const recent = s.data.diary.filter((r) => r.body.trim()).sort((a, b) => b.entry_date.localeCompare(a.entry_date)).slice(0, 3);
+        box.innerHTML = recent.length
+          ? '<p class="ds-label">지난 기록</p>' + recent.map((r) => `<button type="button" class="ds-hit ${r.entry_date === cur ? 'sel' : ''}" data-go="${r.entry_date}"><span class="ds-date">${dateText(r.entry_date)}</span><span class="ds-snip">${esc(r.body.trim().split('\n')[0])}</span></button>`).join('')
+          : '';
+        return;
+      }
       const hits = s.data.diary.filter((r) => r.body.toLowerCase().includes(k.toLowerCase())).sort((a, b) => b.entry_date.localeCompare(a.entry_date));
       box.innerHTML = hits.length
         ? `<p class="muted small">${hits.length}개의 일기</p>` + hits.slice(0, 40).map((r) => `<button type="button" class="ds-hit ${r.entry_date === cur ? 'sel' : ''}" data-go="${r.entry_date}"><span class="ds-date">${dateText(r.entry_date)}</span><span class="ds-snip">${snippet(r.body, k)}</span></button>`).join('')
@@ -192,9 +208,8 @@ export const diary = {
       el.querySelector('[data-slot=setup-err]').textContent = s.diaryError ? `서버 응답: ${s.diaryError}` : '';
       ta.disabled = !s.diaryReady;
       main.dataset.date = iso;
-      main.classList.toggle('is-today', iso === t);
-      const tag = tagOf(iso);
-      main.querySelector('[data-slot=title]').innerHTML = `${tag ? `<span class="diary-tag ${iso === t ? 'now' : ''}">${tag}</span>` : ''}<span class="diary-date ${toneOf(iso, s)}">${dateText(iso)}</span>`;
+            const tag = tagOf(iso);
+      el.querySelector('[data-slot=title]').innerHTML = `${tag ? `<span class="diary-tag ${iso === t ? 'now' : ''}">${tag}</span>` : ''}<span class="diary-date ${toneOf(iso, s)}">${dateText(iso)}</span>`;
       // 그날의 일정 제목을 스티커처럼 붙인다 (휴일 표시는 위의 빨간 이름으로 이미 나옴)
       main.querySelector('[data-slot=stickers]').innerHTML = eventsOn(iso, s.data.events)
         .filter((ev) => !ev.is_holiday)
@@ -202,13 +217,19 @@ export const diary = {
         .join('');
       const h = holidayOn(iso, s);
       main.querySelector('[data-slot=hol]').textContent = h.kr || h.custom || '';
+      main.querySelector('[data-slot=head]').hidden = !(h.kr || h.custom) && !main.querySelector('.diary-sticker');
       ta.placeholder = iso === t ? '오늘 하루는 어땠나요?' : ''; // 안내 문구는 오늘 칸에만
       ta.setAttribute('aria-label', `${dateText(iso)} 일기`);
       el.querySelector('[data-nav=today]').hidden = iso === t;
-      el.querySelector('[data-slot=peek-prev]').innerHTML = peekHTML(addDays(iso, -1), s, -1);
-      el.querySelector('[data-slot=peek-next]').innerHTML = peekHTML(addDays(iso, 1), s, 1);
+      el.querySelector('[data-slot=peek-prev]').innerHTML = peekHTML(addDays(iso, -1), s);
       el.querySelector('[data-slot=peek-prev]').setAttribute('aria-label', `${dateText(addDays(iso, -1))} 일기로 이동`);
-      el.querySelector('[data-slot=peek-next]').setAttribute('aria-label', `${dateText(addDays(iso, 1))} 일기로 이동`);
+      // 모바일: 보고 있는 날이 든 한 주(일~토)
+      const sun = addDays(iso, -parseDate(iso).getDay());
+      const has = new Set(s.data.diary.filter((r) => r.body.trim()).map((r) => r.entry_date));
+      el.querySelector('[data-slot=week]').innerHTML = WD.map((w, i) => {
+        const d = addDays(sun, i);
+        return `<button type="button" class="dw-day ${d === iso ? 'sel' : ''} ${d === t ? 'today' : ''} ${has.has(d) ? 'has' : ''} ${toneOf(d, s)}" data-go="${d}" aria-label="${dateText(d)}${has.has(d) ? ', 일기 있음' : ''}"><span class="dw-w">${w}</span><span class="dw-n">${parseDate(d).getDate()}</span></button>`;
+      }).join('');
       paintCal(s);
       paintSearch(s);
       // 쓰는 중(칸에 커서가 있거나 저장 대기 중)에는 다른 기기·실시간 변경이 내용을 덮어쓰지 못하게 고정한다
@@ -218,6 +239,7 @@ export const diary = {
         if (ta.value !== text) ta.value = text;
         grow(ta);
       }
+      main.querySelector('[data-slot=count]').textContent = `${ta.value.length.toLocaleString('ko-KR')}자`;
     };
 
     // 다른 날로: 먼저 저장한 뒤, 본문이 부드럽게 밀려 나갔다가 새 날짜가 밀려 들어온다.
@@ -267,6 +289,14 @@ export const diary = {
         paint(store.getState(), { force: true });
         return;
       }
+      const op = e.target.closest('[data-open]');
+      if (op) {
+        el.dataset.open = el.dataset.open === op.dataset.open ? '' : op.dataset.open;
+        el.querySelectorAll('[data-open]').forEach((x) => x.setAttribute('aria-expanded', String(el.dataset.open === x.dataset.open)));
+        if (el.dataset.open) el.querySelector(el.dataset.open === 'cal' ? '.mini-cal' : '.diary-search').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (el.dataset.open === 'search') q.focus({ preventScroll: true });
+        return;
+      }
       const g = e.target.closest('[data-go]');
       if (g) return go(0, g.dataset.go);
       const m = e.target.closest('[data-mc]');
@@ -289,6 +319,7 @@ export const diary = {
     });
     ta.addEventListener('input', () => {
       grow(ta);
+      main.querySelector('[data-slot=count]').textContent = `${ta.value.length.toLocaleString('ko-KR')}자`;
       setState(stateEl, '입력 중…');
       clearTimeout(pending.get(cur)?.timer);
       const iso = cur;
