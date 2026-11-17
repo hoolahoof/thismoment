@@ -876,3 +876,13 @@ dialog.sheet.tall { height: 92dvh; }
   .view:has(.home-body) { justify-content: flex-start; }
   .home-body { flex: 1 1 auto; justify-content: center; align-content: center; }
 }
+
+/* 알람이 바뀐 뒤 시계에 반영하라는 안내 (아이폰에서만 나타남) */
+.alarm-sync-banner {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 14;
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px); width: min(520px, calc(100% - 2 * var(--space-4)));
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3); background: var(--color-surface); border: 1px solid var(--color-line-strong); border-radius: var(--radius-card);
+  font-size: var(--font-size-sm);
+}
+.alarm-sync-banner .btn { flex: none; height: 36px; }

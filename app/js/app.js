@@ -1,4 +1,5 @@
 import './viewport.js';
+import './alarmsync.js';
 import { initTheme } from './theme.js';
 import { initPullRefresh } from './pullrefresh.js';
 import { supabase } from './supabase.js';

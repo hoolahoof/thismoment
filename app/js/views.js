@@ -13,10 +13,10 @@ import { home } from './home.js';
 import { diary } from './diary.js';
 import { getTheme, setTheme } from './theme.js';
 import { pickEmoji } from './emoji.js';
+import { SHORTCUT_NAME, SHORTCUT_RUN_URL, markChanged, isAuto, setAuto, isIOS } from './alarmsync.js';
 import { pushSupported, isStandalone, pushState, enablePush, disablePush } from './push.js';
 
-export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
-const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComponent(SHORTCUT_NAME);
+export { SHORTCUT_NAME };
 
 const STATUS_TEXT = {
   idle: '연결 대기',
@@ -310,6 +310,7 @@ const alarm = {
         } else {
           await store.insert('alarms', row);
         }
+        markChanged(); // 시계에 반영해야 울린다
         fe.namedItem('label').value = '';
         msg.textContent = '';
         msg.classList.remove('error');
@@ -342,9 +343,16 @@ const alarm = {
         return;
       }
       try {
-        if (b.dataset.action === 'toggle') await store.update('alarms', a.id, { enabled: !a.enabled });
-        else if (b.dataset.action === 'holiday') await store.update('alarms', a.id, { skip_holidays: !a.skip_holidays, skip_custom_holidays: !a.skip_holidays });
-        else if (b.dataset.action === 'delete' && confirm(`${a.time.slice(0, 5)} ${a.label} 알람을 지울까요?`)) await store.remove('alarms', a.id);
+        if (b.dataset.action === 'toggle') {
+          await store.update('alarms', a.id, { enabled: !a.enabled });
+          markChanged();
+        } else if (b.dataset.action === 'holiday') {
+          await store.update('alarms', a.id, { skip_holidays: !a.skip_holidays, skip_custom_holidays: !a.skip_holidays });
+          markChanged();
+        } else if (b.dataset.action === 'delete' && confirm(`${a.time.slice(0, 5)} ${a.label} 알람을 지울까요?`)) {
+          await store.remove('alarms', a.id);
+          markChanged();
+        }
       } catch (err) {
         alert('저장하지 못했어요: ' + err.message);
       }
@@ -443,10 +451,18 @@ const settings = {
         <div class="copy-row"><span>① 주소</span><button class="btn" data-copy="url" type="button">복사</button></div>
         <div class="copy-row"><span>② apikey 값</span><button class="btn" data-copy="apikey" type="button">복사</button></div>
         <div class="copy-row"><span>③ 토큰 <code data-slot="token">…</code></span><button class="btn" data-copy="token" type="button">복사</button></div>
+        <label class="check"><input type="checkbox" data-local="alarmAuto"> 알람을 바꾸면 자동으로 시계에 반영(단축어 실행)</label>
+        <p class="muted small">켜 두면 알람을 추가·삭제·수정할 때마다 잠시 뒤 단축어로 넘어가요. 막히면 화면 아래 "시계에 반영" 버튼이 남아요. 단축어 실행 뒤에는 이 앱으로 직접 돌아와 주세요.</p>
         <a class="btn primary block-link" href="${SHORTCUT_RUN_URL}">지금 시계에 반영 (단축어 실행)</a>
       </section>
       <button class="btn danger wide" data-action="logout" type="button">로그아웃</button>
       <p class="muted small center credits">홈의 명언은 MIT 라이선스 자료(Hugging Face m-ric/english_historical_quotes, chkim116/kadvice)에서 골라 직접 번역한 것이에요. <a href="https://github.com/hoolahoof/thismoment/blob/main/CREDITS.md" target="_blank" rel="noopener">출처 자세히</a></p>`;
+
+    // 알람 자동 반영 스위치 (이 기기에만 저장, 아이폰이 아니면 의미가 없으니 숨김)
+    const autoBox = el.querySelector('[data-local=alarmAuto]');
+    autoBox.checked = isAuto();
+    autoBox.addEventListener('change', () => setAuto(autoBox.checked));
+    if (!isIOS()) autoBox.closest('label').hidden = true;
 
     lockSupported().then((ok) => {
       if (!ok) {
