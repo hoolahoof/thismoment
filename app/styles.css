@@ -769,6 +769,7 @@ dialog.sheet.tall { height: 92dvh; }
 .diary-col { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
 .diary-main { padding: var(--space-5) var(--space-5) var(--space-3); border-radius: 16px; }
 .diary-day { display: flex; flex-direction: column; gap: var(--space-3); }
+.diary-main { touch-action: pan-y; }
 .diary-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); row-gap: var(--space-2); }
 /* 그날 일정 스티커: 살짝 기울여 붙인 작은 딱지 (일정 색 그대로) */
 .diary-stickers { flex: 1 1 140px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }

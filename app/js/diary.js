@@ -248,7 +248,7 @@ export const diary = {
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
     const move = (kf, ms, easing) => (calm.matches ? Promise.resolve() : main.animate(kf, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {}));
     let busy = false;
-    const go = async (delta, absolute) => {
+    const go = async (delta, absolute, fromX = 0) => {
       const target = absolute ?? addDays(cur, delta);
       if (target === cur || busy) return;
       busy = true;
@@ -265,7 +265,7 @@ export const diary = {
       const steps = Math.min(Math.abs(diff), 9);
       // 1) 지금 카드 전체(제목·스티커·본문)가 위(또는 아래)로 밀려 나간다. 멀리 갈 때는 날짜가 넘어가는 게 보이도록 완전히 지우지 않는다
       const low = steps > 1 ? 0.3 : 0;
-      await move([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-sign * 26}px)`, opacity: low }], steps > 1 ? 180 : 150, 'cubic-bezier(0.4, 0, 1, 1)');
+      await move([{ transform: `translateX(${fromX}px)`, opacity: fromX ? 0.85 : 1 }, { transform: `translateX(${-sign * (fromX ? 90 : 26)}px)`, opacity: low }], steps > 1 ? 180 : 150, 'cubic-bezier(0.4, 0, 1, 1)');
       // 2) 멀리 가면 사이 날짜가 빠르게 넘어간다 (본문은 숨은 상태)
       for (let k = 1; k < steps; k++) {
         cur = addDays(start, Math.round((diff * k) / steps));
@@ -344,6 +344,49 @@ export const diary = {
       window.addEventListener('pointerup', done, { once: true, capture: true, signal: ac.signal });
       window.addEventListener('pointercancel', done, { once: true, capture: true, signal: ac.signal });
     }, true);
+
+    // 폰: 카드를 좌우로 밀어서 넘기기. 손가락을 따라 움직이다가 충분히 밀고 놓으면 이동하고, 모자라면 제자리로 돌아간다.
+    // 세로로 밀면 그냥 스크롤이고, 글을 쓰는 칸의 터치는 가로로 크게 움직일 때만 가로챈다.
+    let sw = null;
+    const settle = () => { main.style.transform = ''; main.style.opacity = ''; main.style.userSelect = ''; };
+    main.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' || busy || !e.isPrimary) return;
+      sw = { x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId };
+    });
+    main.addEventListener('pointermove', (e) => {
+      if (!sw || e.pointerId !== sw.id) return;
+      const dx = e.clientX - sw.x;
+      const dy = e.clientY - sw.y;
+      if (!sw.on) {
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
+        if (Math.abs(dx) < 14) return;
+        sw.on = true;
+        try { main.setPointerCapture(e.pointerId); } catch { /* 이미 끝난 터치 */ }
+        main.style.userSelect = 'none';
+      }
+      sw.dx = dx;
+      main.style.transform = `translateX(${dx * 0.9}px)`;
+      main.style.opacity = String(1 - Math.min(Math.abs(dx) / 500, 0.25));
+    });
+    const endSwipe = (e, cancelled) => {
+      if (!sw || e.pointerId !== sw.id) return;
+      const { dx, on } = sw;
+      sw = null;
+      if (!on) return;
+      // 밀고 난 뒤에 따라오는 '클릭'이 글 쓰는 칸을 눌러 키보드가 뜨지 않게 막는다
+      main.addEventListener('click', (ev) => ev.stopPropagation(), { capture: true, once: true });
+      setTimeout(() => main.removeEventListener('click', () => {}, true), 400);
+      const far = Math.abs(dx) > Math.min(90, main.clientWidth * 0.22);
+      if (!cancelled && far) {
+        settle();
+        go(dx < 0 ? 1 : -1, undefined, dx * 0.9);
+      } else {
+        const back = calm.matches ? Promise.resolve() : main.animate([{ transform: main.style.transform || 'none', opacity: main.style.opacity || 1 }, { transform: 'none', opacity: 1 }], { duration: 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }).finished.catch(() => {});
+        back.then(settle);
+      }
+    };
+    main.addEventListener('pointerup', (e) => endSwipe(e, false));
+    main.addEventListener('pointercancel', (e) => endSwipe(e, true));
 
     ctx = { el, go: (d) => go(d) };
     el._paint = (s) => { if (pressing) deferred = true; else paint(s); };
