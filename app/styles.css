@@ -825,3 +825,10 @@ dialog.sheet.tall { height: 92dvh; }
 .dh-text { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; word-break: break-word; font-size: var(--font-size-md); line-height: 1.7; }
 .dh-empty { font-size: var(--font-size-md); }
 @media (min-width: 900px) { .view:has(.home-head) > .home-sec[data-sec=diary] { grid-column: 1 / -1; } }
+
+/* 앱으로 설치해서 연 창(standalone)이나 넓은 화면에서는 내용이 위에 붙지 않고 세로 가운데에 오게 한다.
+   내용이 화면보다 길면 평소처럼 위에서부터 늘어난다. */
+@media (display-mode: standalone), (min-width: 900px) {
+  .view { min-height: 100vh; min-height: 100dvh; justify-content: center; }
+  .view:has(.home-head) { align-content: center; }
+}

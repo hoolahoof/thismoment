@@ -69,6 +69,7 @@ SQL은 `supabase/`에 번호순. 사용자가 SQL Editor에서 직접 실행한�
 - 일정 추가·수정 창은 데스크탑에서 오른쪽 패널(440px). 단축키: N 새 일정, ← → 달 이동, T 오늘, / 검색 (`calendar.js`)
 - 홈은 내용 없는 섹션을 숨기고 셋 다 비면 한 줄만 보여준다. 명언은 홈 맨 아래
 - 폰/데스크탑 분기는 전부 `styles.css` 맨 아래 `@media (min-width: 900px)` 블록
+- 앱으로 설치해 연 창(`display-mode: standalone`)이나 900px 이상에서는 모든 화면 내용이 세로 가운데에 온다(`.view` 의 `justify-content: center`, 내용이 길면 위에서부터 늘어남). 폰 브라우저 탭은 기존처럼 위에서부터
 
 ## 디자인 (방향 E "사무적·정돈" 적용 완료)
 - 원본 시안: `design/home-e-light.html`, `design/home-e-dark.html`
