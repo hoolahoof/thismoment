@@ -43,7 +43,11 @@ function removeLocal(table, key) {
   state.data[table] = state.data[table].filter((r) => r[k] !== key);
 }
 
-async function loadAll() {
+// 마지막으로 불러온 데이터의 지문: 1분마다 조용히 다시 불러올 때 바뀐 게 없으면 화면을 다시 그리지 않는다
+let lastSig = '';
+const sigOf = () => JSON.stringify([state.data, state.holidays, state.holidaySync ?? null]);
+
+async function loadAll({ silent = false } = {}) {
   const [hol, sync, ...results] = await Promise.all([
     supabase.from('kr_holidays').select('*').order('date'),
     supabase.from('kr_holidays_sync').select('*').eq('id', 1).maybeSingle(),
@@ -63,12 +67,16 @@ async function loadAll() {
   if (hol.error) throw hol.error;
   state.holidays = hol.data;
   state.holidaySync = sync.error ? null : sync.data;
-  emit();
+  const sig = sigOf();
+  const changed = sig !== lastSig;
+  lastSig = sig;
+  if (!silent || changed) emit();
 }
 
 let channel = null;
 let started = false;
 let pruneTimer = null;
+let pollTimer = null;
 const pruning = new Set();
 const PRUNE_AFTER_MS = 10 * 60 * 1000; // 울릴 시각이 지나고 10분 뒤
 
@@ -103,11 +111,12 @@ export async function pruneExpiredAlarms() {
   }
 }
 
-async function resync() {
+// silent: 1분마다 하는 조용한 동기화 — '동기화 중…' 표시를 띄우지 않고, 바뀐 게 있을 때만 화면을 갱신한다
+async function resync({ silent = false } = {}) {
   if (!state.user) return;
   try {
-    setStatus('syncing');
-    await loadAll();
+    if (!silent) setStatus('syncing');
+    await loadAll({ silent });
     pruneExpiredAlarms();
     alignHolidayFlags();
     setStatus(channel && channel.state === 'joined' ? 'live' : 'offline');
@@ -143,6 +152,12 @@ export async function start(user) {
   clearInterval(pruneTimer);
   pruneTimer = setInterval(pruneExpiredAlarms, 60000);
 
+  // 실시간 연결이 끊기거나 놓친 변경이 있어도 새로고침 없이 따라잡도록 1분마다 조용히 다시 불러온다 (화면이 보일 때만)
+  clearInterval(pollTimer);
+  pollTimer = setInterval(() => {
+    if (document.visibilityState === 'visible' && navigator.onLine) resync({ silent: true });
+  }, 60000);
+
   if (!started) {
     started = true;
     window.addEventListener('online', resync);
@@ -155,6 +170,8 @@ export async function start(user) {
 
 export async function stop() {
   clearInterval(pruneTimer);
+  clearInterval(pollTimer);
+  lastSig = '';
   if (channel) await supabase.removeChannel(channel);
   channel = null;
   state.user = null;
