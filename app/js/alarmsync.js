@@ -7,7 +7,7 @@ export const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComp
 const PENDING = 'tm.alarmSync.pending'; // 바뀌었는데 아직 시계에 반영 안 한 시각
 const LAUNCHED = 'tm.alarmSync.launched'; // 단축어를 실행하러 나간 시각
 const AUTO = 'tm.alarmSync.auto'; // '0' 이면 자동 실행 끔
-const DEBOUNCE_MS = 10000; // 여러 개를 연달아 바꾸는 동안은 기다렸다가, 마지막 변경 10초 뒤에 한 번만
+const DEBOUNCE_MS = 5 * 60 * 1000; // 여러 개를 연달아 바꾸는 동안은 기다렸다가, 마지막 변경 5분 뒤에 한 번만
 const RETURN_WITHIN_MS = 10 * 60 * 1000;
 
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -26,7 +26,7 @@ let timer = null;
 let banner = null;
 
 function launch() {
-  clearTimeout(timer); // 직접 눌러 반영했다면 10초 뒤의 자동 실행은 필요 없다
+  clearTimeout(timer); // 직접 눌러 반영했다면 대기 중인 자동 실행은 필요 없다
   write(LAUNCHED, String(Date.now()));
   nav.go(SHORTCUT_RUN_URL);
 }
@@ -46,8 +46,8 @@ function render() {
     banner = document.createElement('div');
     banner.className = 'alarm-sync-banner';
     banner.setAttribute('role', 'status');
-    banner.innerHTML = '<span>⏰ 알람이 바뀌었어요.<br>시계에 반영해야 울려요.</span><button type="button" class="btn primary">시계에 반영</button>';
-    banner.querySelector('button').addEventListener('click', launch); // 직접 누른 것이라 확실히 실행됨
+    // 버튼은 두지 않는다 (알람 탭에 '지금 시계에 반영' 링크가 있다)
+    banner.innerHTML = '<span>⏰ 알람이 바뀌었어요.<br>시계에 반영해야 울려요.</span>';
     document.body.appendChild(banner);
   }
 }
