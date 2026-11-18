@@ -26,9 +26,18 @@ let timer = null;
 let banner = null;
 
 function launch() {
+  clearTimeout(timer); // 직접 눌러 반영했다면 10초 뒤의 자동 실행은 필요 없다
   write(LAUNCHED, String(Date.now()));
   nav.go(SHORTCUT_RUN_URL);
 }
+
+// 알람 탭·설정의 "지금 시계에 반영" 링크를 직접 눌러도 대기 중인 자동 실행을 취소한다
+document.addEventListener('click', (e) => {
+  if (e.target.closest?.('a[href^="shortcuts://"]')) {
+    clearTimeout(timer);
+    write(LAUNCHED, String(Date.now()));
+  }
+}, true);
 
 function render() {
   if (!isIOS()) return;
@@ -37,7 +46,7 @@ function render() {
     banner = document.createElement('div');
     banner.className = 'alarm-sync-banner';
     banner.setAttribute('role', 'status');
-    banner.innerHTML = '<span>⏰ 알람이 바뀌었어요. 시계에 반영해야 울려요.</span><button type="button" class="btn primary">시계에 반영</button>';
+    banner.innerHTML = '<span>⏰ 알람이 바뀌었어요.<br>시계에 반영해야 울려요.</span><button type="button" class="btn primary">시계에 반영</button>';
     banner.querySelector('button').addEventListener('click', launch); // 직접 누른 것이라 확실히 실행됨
     document.body.appendChild(banner);
   }
