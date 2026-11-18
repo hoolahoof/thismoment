@@ -236,7 +236,7 @@ const alarm = {
         </div>
       </form>
       <ul class="list" data-slot="list"></ul>
-      <a class="btn block-link" href="${SHORTCUT_RUN_URL}">알람 바꾼 뒤 지금 시계에 반영</a>
+      <a class="btn block-link" href="${SHORTCUT_RUN_URL}">변경된 알람 적용</a>
       <p class="muted small">실제로 울리는 건 아이폰 시계 앱이에요.<br>매일 0시에 단축어가 자동으로 맞춰줘요.<br>(설정 → 아이폰 시계 알람 연동)</p>`;
 
     const form = el.querySelector('[data-slot=form]');
@@ -452,7 +452,7 @@ const settings = {
         <div class="copy-row"><span>② apikey 값</span><button class="btn" data-copy="apikey" type="button">복사</button></div>
         <div class="copy-row"><span>③ 토큰 <code data-slot="token">…</code></span><button class="btn" data-copy="token" type="button">복사</button></div>
         <label class="check"><input type="checkbox" data-local="alarmAuto"> 알람을 바꾸면 자동으로 시계에 반영(단축어 실행)</label>
-        <p class="muted small">켜 두면 알람을 추가·삭제·수정하고 5분이 지나면 단축어로 넘어가요. (그 전에 알람 탭의 "지금 시계에 반영"을 누르면 바로 실행돼요.) 막히면 화면 아래 "시계에 반영" 버튼이 남아요. 단축어 실행 뒤에는 이 앱으로 직접 돌아와 주세요.</p>
+        <p class="muted small">켜 두면 알람을 추가·삭제·수정하고 5분이 지나면 단축어로 넘어가요. (그 전에 알람 탭의 "변경된 알람 적용"을 누르면 바로 실행돼요.) 막히면 화면 아래 "시계에 반영" 버튼이 남아요. 단축어 실행 뒤에는 이 앱으로 직접 돌아와 주세요.</p>
         <a class="btn primary block-link" href="${SHORTCUT_RUN_URL}">지금 시계에 반영 (단축어 실행)</a>
       </section>
       <button class="btn danger wide" data-action="logout" type="button">로그아웃</button>

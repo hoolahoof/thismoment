@@ -31,7 +31,7 @@ function launch() {
   nav.go(SHORTCUT_RUN_URL);
 }
 
-// 알람 탭·설정의 "지금 시계에 반영" 링크를 직접 눌러도 대기 중인 자동 실행을 취소한다
+// 알람 탭의 "변경된 알람 적용"·설정의 "지금 시계에 반영" 링크를 직접 눌러도 대기 중인 자동 실행을 취소한다
 document.addEventListener('click', (e) => {
   if (e.target.closest?.('a[href^="shortcuts://"]')) {
     clearTimeout(timer);
@@ -46,7 +46,7 @@ function render() {
     banner = document.createElement('div');
     banner.className = 'alarm-sync-banner';
     banner.setAttribute('role', 'status');
-    // 버튼은 두지 않는다 (알람 탭에 '지금 시계에 반영' 링크가 있다)
+    // 버튼은 두지 않는다 (알람 탭에 '변경된 알람 적용' 링크가 있다)
     banner.innerHTML = '<span>⏰ 알람이 바뀌었어요.<br>시계에 반영해야 울려요.</span>';
     document.body.appendChild(banner);
   }
