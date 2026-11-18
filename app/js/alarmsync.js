@@ -7,7 +7,7 @@ export const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComp
 const PENDING = 'tm.alarmSync.pending'; // 바뀌었는데 아직 시계에 반영 안 한 시각
 const LAUNCHED = 'tm.alarmSync.launched'; // 단축어를 실행하러 나간 시각
 const AUTO = 'tm.alarmSync.auto'; // '0' 이면 자동 실행 끔
-const DEBOUNCE_MS = 2500; // 여러 개를 연달아 바꾸는 동안은 기다렸다가 한 번만
+const DEBOUNCE_MS = 10000; // 여러 개를 연달아 바꾸는 동안은 기다렸다가, 마지막 변경 10초 뒤에 한 번만
 const RETURN_WITHIN_MS = 10 * 60 * 1000;
 
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
