@@ -3,6 +3,9 @@
 // 안 되면 화면에 "시계에 반영" 버튼을 남겨 한 번 누르면 되게 한다.
 export const SHORTCUT_NAME = 'ThisMoment 알람 동기화';
 export const SHORTCUT_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComponent(SHORTCUT_NAME);
+// 시계 앱에 쌓인 꺼진 TM 알람을 지우는 단축어 (직접 눌러 쓰는 용도, 삭제 확인 창이 뜸)
+export const CLEANUP_NAME = 'TM 알람 정리';
+export const CLEANUP_RUN_URL = 'shortcuts://run-shortcut?name=' + encodeURIComponent(CLEANUP_NAME);
 
 const PENDING = 'tm.alarmSync.pending'; // 바뀌었는데 아직 시계에 반영 안 한 시각
 const LAUNCHED = 'tm.alarmSync.launched'; // 단축어를 실행하러 나간 시각
@@ -33,7 +36,8 @@ function launch() {
 
 // 알람 탭의 "변경된 알람 적용"·설정의 "지금 시계에 반영" 링크를 직접 눌러도 대기 중인 자동 실행을 취소한다
 document.addEventListener('click', (e) => {
-  if (e.target.closest?.('a[href^="shortcuts://"]')) {
+  // 정리 단축어 링크(미사용 알람 삭제)는 동기화가 아니므로 대기 중인 자동 실행을 건드리지 않는다
+  if (e.target.closest?.('a')?.getAttribute('href') === SHORTCUT_RUN_URL) {
     clearTimeout(timer);
     write(LAUNCHED, String(Date.now()));
   }

@@ -13,7 +13,7 @@ import { home } from './home.js';
 import { diary } from './diary.js';
 import { getTheme, setTheme } from './theme.js';
 import { pickEmoji } from './emoji.js';
-import { SHORTCUT_NAME, SHORTCUT_RUN_URL, markChanged, isAuto, setAuto, isIOS } from './alarmsync.js';
+import { SHORTCUT_NAME, SHORTCUT_RUN_URL, CLEANUP_RUN_URL, markChanged, isAuto, setAuto, isIOS } from './alarmsync.js';
 import { pushSupported, isStandalone, pushState, enablePush, disablePush } from './push.js';
 
 export { SHORTCUT_NAME };
@@ -237,6 +237,8 @@ const alarm = {
       </form>
       <ul class="list" data-slot="list"></ul>
       <a class="btn block-link" href="${SHORTCUT_RUN_URL}">변경된 알람 적용</a>
+      <a class="btn block-link" href="${CLEANUP_RUN_URL}">미사용 알람 삭제</a>
+      <p class="muted small">"미사용 알람 삭제"는 시계 앱에 남은 꺼진 TM 알람을 지워요. 확인 창이 뜨면 "삭제"를 눌러 주세요. (단축어 "TM 알람 정리"가 있어야 해요)</p>
       <p class="muted small">실제로 울리는 건 아이폰 시계 앱이에요.<br>매일 0시에 단축어가 자동으로 맞춰줘요.<br>(설정 → 아이폰 시계 알람 연동)</p>`;
 
     const form = el.querySelector('[data-slot=form]');
