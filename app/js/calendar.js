@@ -6,7 +6,7 @@ import { localISO, eventsOn, parseRule, sameRule, describeRule, hm, eventTime, d
 import { COLORS, colorOf, isCustomColor, REPEAT_ICON } from './colors.js';
 import { pickEmoji, emojiTag } from './emoji.js';
 import { setupSearch, searchDialogHTML, searchIcon } from './search.js';
-import { applyEdit, createEvent, deleteEvent, askScope, scopeOptions, findOccurrence, moveEvent } from './events.js';
+import { applyEdit, createEvent, linkDday, deleteEvent, askScope, scopeOptions, findOccurrence, moveEvent } from './events.js';
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const pad = (n) => String(n).padStart(2, '0');
@@ -779,7 +779,7 @@ export function setupEventDialog(root) {
     f.namedItem('emoji').value = ev?.emoji ?? '';
     paintEmo();
     f.namedItem('also_dday').checked = false;
-    form.querySelector('[data-when=newdday]').hidden = !!ev || !!opts.holiday;
+    form.querySelector('[data-when=newdday]').hidden = !!opts.holiday || (!!ev && (!!ev.dday_id || !!ev.is_holiday || !!parseRule(ev.recurrence)));
     form.querySelector('[data-when=ddaylink]').hidden = !ev?.dday_id;
     f.namedItem('note').value = ev?.note ?? '';
     syncAllDay();
@@ -835,6 +835,7 @@ export function setupEventDialog(root) {
           if (!scope) return;
         }
         await applyEdit({ occ: editing, fields, start: starts, end: ends, rule, scope });
+        if (f.namedItem('also_dday').checked && !holiday && !rule && !oldRule) await linkDday(editing, title, starts);
       } else {
         await createEvent({ fields, start: starts, end: ends, rule, alsoDday: f.namedItem('also_dday').checked && !holiday });
       }

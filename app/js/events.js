@@ -141,6 +141,18 @@ export async function createEvent({ fields, start, end, rule, alsoDday }) {
   return ev;
 }
 
+// 이미 있는 (반복 아닌) 일정에 D-Day를 만들어 연결한다
+export async function linkDday(occ, title, start) {
+  const master = masterOf(occ);
+  if (!master || master.dday_id) return;
+  try {
+    const d = await store.insert('ddays', { title, target_date: toISODate(start), count_up: false });
+    await store.update('events', master.id, { dday_id: d.id });
+  } catch (err) {
+    throw new Error('일정은 저장했지만 D-Day 연결에 실패했어요: ' + err.message + ' (SQL 014 를 실행했는지 확인해 주세요)');
+  }
+}
+
 // ── 삭제 ──
 export async function deleteEvent({ occ, scope }) {
   const master = masterOf(occ);
