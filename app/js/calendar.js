@@ -491,7 +491,7 @@ export function eventDialogHTML() {
         <label class="grow">날짜<input type="date" name="date" required></label>
         <label class="grow" data-when="allday">끝나는 날<input type="date" name="end_date"></label>
       </div>
-      <label class="check" data-when="newdday"><input type="checkbox" name="also_dday"> D-Day로도 등록</label>
+      <label class="check" data-when="newdday"><input type="checkbox" name="also_dday"> D-Day 등록</label>
       <p class="muted small" data-when="ddaylink" hidden>D-Day와 연결된 일정이에요. 이름·날짜를 바꾸면 D-Day도 바뀌고, 지우면 D-Day도 같이 지워져요.</p>
       <!-- 시간 입력은 없앴다. 예전에 시간을 넣어 만든 일정을 고칠 때 시간이 그대로 유지되도록 값만 숨겨 둔다 -->
       <input type="hidden" name="start" value="09:00">
