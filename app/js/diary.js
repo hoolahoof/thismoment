@@ -1,5 +1,6 @@
 // 오늘 하루: 하루에 하나씩 쓰는 일기. 가운데 큰 페이지에 쓰고, 위(어제)·아래(내일) 작고 흐린 페이지를 눌러 넘긴다.
 // 입력하면 잠깐 멈춘 뒤 자동 저장된다 (저장 버튼 없음).
+import { fixBeforeCaret } from './spell.js';
 import * as store from './store.js';
 import { esc, parseDate, toISODate, todayLocal, icons } from './util.js';
 import { addDays } from './recur.js';
@@ -124,7 +125,7 @@ export const diary = {
             <span class="red small" data-slot="hol"></span>
             <div class="diary-stickers" data-slot="stickers"></div>
           </div>
-          <textarea class="diary-text" maxlength="5000"></textarea>
+          <textarea class="diary-text" maxlength="5000" lang="ko" spellcheck="true" autocorrect="on" autocapitalize="off"></textarea>
           <footer class="diary-foot">
             <span class="muted small" data-slot="count"></span>
             <span class="diary-state muted small" data-slot="state" role="status"></span>
@@ -317,10 +318,21 @@ export const diary = {
       const first = el.querySelector('.ds-hit');
       if (first) go(0, first.dataset.go);
     });
-    ta.addEventListener('input', () => {
+    ta.addEventListener('input', (e) => {
+      // 맞춤법: 낱말을 끝낸 순간 틀리기 쉬운 말을 고친다 (한글 입력 중에는 건드리지 않음)
+      let fixedMsg = '';
+      if (!e.isComposing && ta.selectionStart === ta.selectionEnd) {
+        const fx = fixBeforeCaret(ta.value, ta.selectionStart);
+        if (fx) {
+          const caret = ta.selectionStart + (fx.text.length - (fx.to - fx.from));
+          ta.setRangeText(fx.text, fx.from, fx.to, 'preserve');
+          ta.setSelectionRange(caret, caret);
+          fixedMsg = `맞춤법 고침: ${fx.before} → ${fx.text}`;
+        }
+      }
       grow(ta);
       main.querySelector('[data-slot=count]').textContent = `${ta.value.length.toLocaleString('ko-KR')}자`;
-      setState(stateEl, '입력 중…');
+      setState(stateEl, fixedMsg || '입력 중…');
       clearTimeout(pending.get(cur)?.timer);
       const iso = cur;
       pending.set(iso, { timer: setTimeout(() => flush(iso), SAVE_DELAY), ta, stateEl });
